@@ -2617,7 +2617,15 @@
   }
   function recRichness(r){
     if(r.module!=="sport") return 0;
-    if(r.sport==="健身") return ((r.exercises && r.exercises.length) ? 2 : 0) + ((r.parts && r.parts.length) ? 1 : 0);
+    if(r.sport==="健身"){
+      var ex=r.exercises||[], real=0, junk=0;
+      ex.forEach(function(e){
+        var nm=(e&&e.name!=null)?String(e.name).trim():"";
+        var hasSet=((e&&e.sets)||[]).some(function(s){ return s && (s.w!=null||s.r!=null); });
+        if(nm||hasSet) real++; else junk++;
+      });
+      return real*10 + ((r.parts && r.parts.length) ? 1 : 0) - junk;  // 干净副本(无幽灵空动作)优先胜出
+    }
     return (r.distance!=null) ? 2 : 0;
   }
   // Collapse records that share an identical content signature (the duplicates
@@ -2720,11 +2728,20 @@
     }
     return r;
   }
+  // 归一化健身动作用于签名：剔除"空名称且无有效 set"的垃圾动作(常来自 raw 里的"；；"分隔)，
+  // 并剔除动作内的空 set，使得"干净版"与"带幽灵空动作的重导版"得到相同签名，从而能被去重识别。
+  function cleanExForSig(list){
+    return (list||[]).map(function(ex){
+      var name=(ex&&ex.name!=null)?String(ex.name).trim():"";
+      var sets=((ex&&ex.sets)||[]).filter(function(s){ return s && (s.w!=null || s.r!=null || (s.extra&&String(s.extra).trim())); });
+      return { name:name, sets:sets };
+    }).filter(function(ex){ return ex.name || ex.sets.length; });
+  }
   function signature(r){
     if(r.module==="thought") return "T|"+r.time+"|"+r.content;
     if(r.module==="sport"){
       var base = "S|"+r.time+"|"+r.sport+"|"+r.duration;
-      if(r.sport==="健身") base += "|"+WP.serializeExercises(r.exercises||[]);
+      if(r.sport==="健身") base += "|"+WP.serializeExercises(cleanExForSig(r.exercises||[]));
       else base += "|"+(r.distance==null?"":(r.distance+(r.distUnit||"")))+"|"+(r.note||"");
       return base;
     }
