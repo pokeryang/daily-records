@@ -2367,12 +2367,45 @@
       + (dur>0 ? ("时长约"+dur+"分钟。") : "")
       + "动作明细：" + (lines.join("；") || "无");
   }
-  // 力量卡路里 AI 静默自动估算 —— 无按钮，boot 后遍历所有缺失 kcal 的力量记录，
-  // 顺序调用（间隔 400ms 避免并发压力），成功后写回 r.kcal + save + cloudUpsert。
-  function aiEstimateSilent(r){
-    if(!r || r.sport!=="健身") return Promise.resolve(false);
-    var prompt = strengthDesc(r)
-      + "\n\n请根据以上力量训练内容，估算这次训练总共消耗的卡路里（千卡）。"
+  // build a human-readable description of a cardio session for the model
+  function cardioDesc(r){
+    var w = (state.profile && num(state.profile.weightKg)) || DEFAULT_PROFILE.weightKg;
+    var sp = r.sport || "有氧运动";
+    var km = distanceKm(r);
+    var dur = num(r.duration);
+    return "体重" + w + "公斤，进行" + sp + "。"
+      + (km>0 ? ("距离约"+km+"公里。") : "")
+      + (dur>0 ? ("时长约"+dur+"分钟。") : "");
+  }
+  // 判定是否是一条可估算的记录
+  function aiEligible(r){
+    if(!r || r.module!=="sport") return false;
+    if(r.sport==="健身"){
+      var ex = r.exercises||[];
+      return ex.some(function(e){
+        return (e.name||"").trim() || (e.sets||[]).some(function(s){ return s && (s.w!=null || s.r!=null || s.n!=null); });
+      });
+    }
+    // cardio: 有距离或时长即可
+    var km = distanceKm(r), dur = num(r.duration);
+    return (km>0) || (dur>0);
+  }
+  // 更新页面上此条记录的 kcal 只读单元格
+  function refreshKcalCell(r){
+    if(!r) return;
+    var k = calcCalories(r);
+    var txt = (k>0) ? String(k) : "";
+    var sCell = document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
+    if(sCell) sCell.textContent = txt;
+    var cCell = document.querySelector('[data-cardio-body] tr[data-cid="'+r.id+'"] [data-cell="kcal"]');
+    if(cCell) cCell.textContent = txt;
+  }
+  // 统一 AI 卡路里估算 —— 力量 + 有氧
+  function aiKcal(r){
+    if(!aiEligible(r)) return Promise.resolve(false);
+    var desc = (r.sport==="健身") ? strengthDesc(r) : cardioDesc(r);
+    var prompt = desc
+      + "\n\n请根据以上运动内容，估算这次运动总共消耗的卡路里（千卡）。"
       + "只返回一个整数，不要任何单位、文字或解释。";
     return fetch(AI_ENDPOINT, {
       method:"POST",
@@ -2395,24 +2428,31 @@
       if(kv==null || !(kv>0)) throw new Error("bad ai response: "+txt);
       r.kcal = kv; r.updatedAt = Date.now();
       save(); cloudUpsert(r);
-      // in-place 刷新对应行的 kcal 输入 + 统计
-      var inp = document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
-      if(inp && document.activeElement!==inp) inp.value = kv;
+      refreshKcalCell(r);
       return true;
-    }).catch(function(err){ console.warn("[autoEstimate]", r.id, err && err.message); return false; });
+    }).catch(function(err){ console.warn("[aiKcal]", r.id, err && err.message); return false; });
+  }
+  // 兼容旧名字
+  function aiEstimateSilent(r){ return aiKcal(r); }
+  // debounce per-record: 编辑力量/有氧字段后 800ms 触发一次 AI 重算
+  var _aiTimers = {};
+  function scheduleAiKcal(r){
+    if(!r || !r.id) return;
+    if(!aiEligible(r)) return;
+    if(_aiTimers[r.id]) clearTimeout(_aiTimers[r.id]);
+    _aiTimers[r.id] = setTimeout(function(){
+      delete _aiTimers[r.id];
+      aiKcal(r).then(function(ok){ if(ok){ renderStats(); updTotal(); } });
+    }, 800);
   }
   var _autoEstimateRunning = false;
   function autoEstimateAll(){
     if(_autoEstimateRunning) return;
     _autoEstimateRunning = true;
     var todo = state.records.filter(function(r){
-      if(r.module!=="sport" || r.sport!=="健身") return false;
+      if(r.module!=="sport") return false;
       if(r.kcal>0) return false;
-      var ex = r.exercises||[];
-      var hasContent = ex.some(function(e){
-        return (e.name||"").trim() || (e.sets||[]).some(function(s){ return s && (s.w!=null || s.r!=null || s.n!=null); });
-      });
-      return hasContent;
+      return aiEligible(r);
     });
     if(!todo.length){ _autoEstimateRunning = false; return; }
     var i = 0, changed = 0;
@@ -2423,7 +2463,7 @@
         return;
       }
       var r = todo[i++];
-      aiEstimateSilent(r).then(function(ok){ if(ok) changed++; setTimeout(next, 400); });
+      aiKcal(r).then(function(ok){ if(ok) changed++; setTimeout(next, 400); });
     }
     next();
   }
@@ -2774,11 +2814,11 @@
     }
     return "";
   }
-  // 时长展示统一为 "Xh Ymin"（默认 0h 0min）
+  // 时长展示统一为 "X' Y''"（默认 0' 0''）
   function fmtDurHM(minutes){
     var t = num(minutes); if(t==null || t<0) t = 0;
     var h = Math.floor(t/60), m = Math.round(t - h*60);
-    return h+"h "+m+"min";
+    return h+"' "+m+"''";
   }
   // ---------- 力量训练 (strength) ----------
   var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/其他
@@ -2860,7 +2900,7 @@
       cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
       if(first){
         var kc=calcCalories(r);
-        cells += '<td class="span-cell num" rowspan="'+span+'"><input class="hc" type="number" step="1" data-sk="kcal" value="'+esc(kc>0?kc:"")+'"></td>';
+        cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal">'+(kc>0?kc:"")+'</td>';
       }
       cells += '<td class="setact"><button type="button" class="mini-btn plus" data-set-add="'+esc(r.id)+'" data-ei="'+ln.ei+'" title="上方加一行">+</button>'
              + '<button type="button" class="mini-btn minus" data-set-del="'+esc(r.id)+'" data-ei="'+ln.ei+'" data-si="'+ln.si+'" title="删除本行">&minus;</button></td>';
@@ -2887,9 +2927,6 @@
       var t=normTime(el.value);
       if(!t){ toast("时间不能为空", true); renderStrength(); return; }
       r.time=t;
-    }else if(sk==="kcal"){
-      var kv=num(el.value);
-      if(kv!=null && kv>0) r.kcal=kv; else delete r.kcal;
     }else if(f){
       var ei=+el.getAttribute("data-ei"), si=+el.getAttribute("data-si");
       if(!Array.isArray(r.exercises)) r.exercises=[];
@@ -2903,14 +2940,17 @@
       syncStrengthRaw(r);
     }
     r.updatedAt=Date.now();
+    // 消耗量完全由 AI 生成,任何字段变更都要重算：先清掉旧值,由 scheduleAiKcal 异步刷新
+    delete r.kcal;
     // NOTE: do NOT renderStrength() on plain field edits — a full re-render would
     // destroy the (+)/(−) button under the cursor and swallow the first click.
     // The typed value already shows in the DOM; we only persist + refresh stats.
     save(); cloudUpsert(r); renderStats(); updTotal();
-    // keep the session's calorie figure live (auto estimate follows set changes),
-    // without clobbering the field the user is actively typing into.
+    // AI 完成前用本地估算兜底显示
     var kc=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
-    if(kc && kc!==el){ var k=calcCalories(r); kc.value = k>0 ? k : ""; }
+    if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
+    // 触发 AI 重算 kcal（去抖后异步刷新）
+    scheduleAiKcal(r);
   }
   function positionPdropMenu(dd){
     var btn=dd.querySelector(".pdrop-btn"), menu=dd.querySelector(".pdrop-menu");
@@ -2934,7 +2974,9 @@
     if(i>=0) r.parts.splice(i,1); else r.parts.push(p);
     r.parts = PARTS_ALL.filter(function(x){ return r.parts.indexOf(x)>=0; });
     r.updatedAt=Date.now();
+    delete r.kcal;
     save(); cloudUpsert(r); renderStats();
+    scheduleAiKcal(r);
     // in-place refresh of just this session's parts cell — keep dropdown open
     var cell=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] .parts-cell');
     if(cell){
@@ -2952,7 +2994,9 @@
     var pos=(ei>=0 && ei<=r.exercises.length) ? ei : r.exercises.length;
     r.exercises.splice(pos,0,{ name:"", sets:[{ w:null, unit:"kg", r:null, n:1 }] });
     syncStrengthRaw(r); r.updatedAt=Date.now();
+    delete r.kcal;
     save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
+    scheduleAiKcal(r);
   }
   function strengthDelSet(id, ei, si){
     var r=findSport(id); if(!r) return;
@@ -2965,7 +3009,9 @@
       save(); cloudDelete(id); renderStrength(); renderStats(); updTotal(); return;
     }
     syncStrengthRaw(r); r.updatedAt=Date.now();
+    delete r.kcal;
     save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
+    scheduleAiKcal(r);
   }
   function strengthAddSession(){
     var r=validate({ module:"sport", sport:"健身", time:todayStr(), parts:[], project:"" });
@@ -3005,7 +3051,7 @@
   }
   function cardioRowHTML(r){
     var opts=CARDIO_SPORTS.map(function(o){ return '<option value="'+esc(o)+'"'+(r.sport===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("");
-    var distTxt = (r.distance!=null) ? (r.distance + (r.distUnit||"")) : (r.raw || r.note || "");
+    var distTxt = (r.distance!=null && r.distance!=="") ? (r.distance + "km") : "";
     var pace=cardioPaceStr(r), kcal=calcCalories(r);
     var totalMin = num(r.duration); if(totalMin==null || totalMin<0) totalMin = 0;
     var durH = Math.floor(totalMin/60), durM = Math.round(totalMin - durH*60);
@@ -3014,13 +3060,13 @@
       + '<td><select class="hc" data-cf="sport">'+opts+'</select></td>'
       + '<td class="num durc">'
         + '<input class="hc" type="number" step="1" min="0" data-cf="durH" value="'+durH+'">'
-        + '<span class="du-unit">h</span>'
+        + '<span class="du-unit">&#8242;</span>'
         + '<input class="hc" type="number" step="1" min="0" data-cf="durM" value="'+durM+'">'
-        + '<span class="du-unit">min</span>'
+        + '<span class="du-unit">&#8243;</span>'
       + '</td>'
-      + '<td><input class="hc" data-cf="dist" value="'+esc(distTxt)+'"></td>'
+      + '<td><input class="hc" data-cf="dist" placeholder="如 5km" value="'+esc(distTxt)+'"></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
-      + '<td class="num"><input class="hc" type="number" step="1" data-cf="kcal" value="'+esc(kcal>0?kcal:"")+'"></td>'
+      + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="新增一条">+</button>'
         + '<button type="button" class="mini-btn minus" data-cardio-del="'+esc(r.id)+'" title="删除">&minus;</button></td>'
       + '</tr>';
@@ -3063,19 +3109,20 @@
     }else if(f==="dist"){
       var d=parseDistText(r.sport, el.value);
       r.distance=d.distance; r.distUnit=d.unit;
-      r.raw = (d.distance==null && el.value) ? String(el.value).trim() : "";
-    }else if(f==="kcal"){
-      var kv=num(el.value);
-      if(kv!=null && kv>0) r.kcal=kv; else delete r.kcal;
+      r.raw = "";
     }
     r.updatedAt=Date.now();
+    // 项目/时长/距离/运动类型变化 → 触发 AI 重算 kcal（去抖异步）
+    // 先清掉现值,以免手动值一直占位；AI 完成前用本地估算兜底显示
+    delete r.kcal;
     save(); cloudUpsert(r); renderStats(); updTotal();
     if(needRerender){ renderCardio(); return; }
     // update derived (readonly) cells in place — avoids destroying the (+)/(−)
     // buttons mid-click (which otherwise required a second click).
     var pc=tr.querySelector('[data-cell="pace"]'); if(pc) pc.textContent=cardioPaceStr(r);
-    var kc=tr.querySelector('[data-cf="kcal"]');
-    if(kc && kc!==el){ var k=calcCalories(r); kc.value = k>0 ? k : ""; }
+    var kc=tr.querySelector('[data-cell="kcal"]');
+    if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
+    scheduleAiKcal(r);
   }
   function cardioAdd(){
     var r=validate({ module:"sport", sport:"跑步", time:todayStr(), project:"" });
