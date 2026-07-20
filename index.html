@@ -356,8 +356,16 @@
   .chart-ctrls .pill-group .pill{padding:3px 9px; font-size:11.5px}
   .chart-stack{display:flex; flex-direction:column; gap:14px}
   .chart-sub{}
-  .chart-sub-title{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px; display:flex; align-items:center; gap:8px}
+  .chart-sub-title{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
   .chart-sub-title .csub-scope{font-size:11px; color:var(--muted); font-weight:400}
+  .chart-nav{display:inline-flex; align-items:center; gap:2px; margin-left:auto}
+  .chart-nav .cnav-btn{border:1px solid #d8ddea; background:#fff; color:var(--ink); font-size:11px; padding:1px 7px; border-radius:6px; cursor:pointer; line-height:1.4}
+  .chart-nav .cnav-btn:hover:not(:disabled){background:#f0f2f8}
+  .chart-nav .cnav-btn:disabled{opacity:.35; cursor:not-allowed}
+  .chart-nav .cnav-cur{font-size:11px; color:var(--ink); font-variant-numeric:tabular-nums; padding:0 4px; min-width:64px; text-align:center; font-weight:600}
+  .chart-nav .cnav-today{border:1px solid transparent; background:transparent; color:var(--muted); font-size:10.5px; padding:1px 5px; border-radius:5px; cursor:pointer; margin-left:2px}
+  .chart-nav .cnav-today:hover{color:var(--ink); background:#f0f2f8}
+  .chart-nav .cnav-today.hide{visibility:hidden}
   .st-chart{--bar:var(--sport)}
   .stbars{display:flex; align-items:flex-end; gap:3px; height:140px; padding:4px 2px 0; overflow-x:auto}
   .stbar{flex:1 0 auto; min-width:14px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; cursor:pointer}
@@ -3437,7 +3445,9 @@
   var calSelDay = null;        // 点开查看详情的日
   var chartUnit = "km";        // km | kcal
   var chartProj = "all";       // all | 跑步 | 游泳 | 爬山 | 骑行 | 力量
-  var chartYearSel = null;     // 全年图选中的月 idx (0-11)
+  var chartYear = null;        // 全年图查看的年份 (null=当前年)
+  var chartMonth = null;       // 本月图查看的 {y,m} (null=当前月)
+  var chartYearSel = null;     // 全年图选中的月 (1-12)
   var chartMonthSel = null;    // 本月图选中的日 (1-31)
   function renderStats(){
     // reflect current weight into the input
@@ -3545,7 +3555,14 @@
     var box=document.querySelector("[data-stats-chart]");
     if(!box) return;
     var now=new Date();
-    var yy=now.getFullYear(), mm=now.getMonth();
+    var curY=now.getFullYear(), curM=now.getMonth();
+    // 目标：yy=全年图年份；mY/mM=本月图年月
+    var yy = (chartYear!=null) ? chartYear : curY;
+    var mY = (chartMonth && chartMonth.y!=null) ? chartMonth.y : curY;
+    var mM = (chartMonth && chartMonth.m!=null) ? chartMonth.m : curM;
+    // 查看非当前年/月时,不高亮 "今天/本月" ；且换年/换月清掉选中
+    var isCurY = (yy===curY);
+    var isCurM = (mY===curY && mM===curM);
     // ---- 全年 12 月桶 ----
     var yBuckets=[]; for(var mi=0;mi<12;mi++) yBuckets.push(0);
     state.records.forEach(function(r){
@@ -3553,12 +3570,12 @@
       var d=recDate(r); if(!d || d.getFullYear()!==yy) return;
       yBuckets[d.getMonth()] += chartVal(r, chartUnit);
     });
-    // ---- 本月 N 日桶 ----
-    var days=new Date(yy,mm+1,0).getDate();
+    // ---- 目标月 N 日桶 ----
+    var days=new Date(mY,mM+1,0).getDate();
     var dBuckets=[]; for(var di=0;di<days;di++) dBuckets.push(0);
     state.records.forEach(function(r){
       if(r.module!=="sport" || !projMatch(r,chartProj)) return;
-      var d=recDate(r); if(!d || d.getFullYear()!==yy || d.getMonth()!==mm) return;
+      var d=recDate(r); if(!d || d.getFullYear()!==mY || d.getMonth()!==mM) return;
       dBuckets[d.getDate()-1] += chartVal(r, chartUnit);
     });
     var unitTxt = chartUnit==="km" ? "公里" : "千卡";
@@ -3568,6 +3585,18 @@
     var dTot = rnd(dBuckets.reduce(function(a,b){return a+b;},0));
     var barColor = (chartUnit==="km") ? SPORT_GREEN : "#7c3aed";
     var projName = (chartProj==="all") ? "全部" : chartProj;
+    // 判断"下一年/下一月"按钮是否禁用：不越过当前月
+    var yearNextDisabled = (yy>=curY);
+    var monNextDisabled = (mY>curY) || (mY===curY && mM>=curM);
+    function navHTML(scope, curLabel, prevDisabled, nextDisabled, showToday){
+      var todayCls = showToday ? "cnav-today" : "cnav-today hide";
+      return '<span class="chart-nav" data-nav-scope="'+scope+'">'
+        + '<button type="button" class="cnav-btn" data-nav-step="-1"'+(prevDisabled?' disabled':'')+' title="上一'+(scope==="year"?"年":"月")+'">&lsaquo;</button>'
+        + '<span class="cnav-cur">'+esc(curLabel)+'</span>'
+        + '<button type="button" class="cnav-btn" data-nav-step="1"'+(nextDisabled?' disabled':'')+' title="下一'+(scope==="year"?"年":"月")+'">&rsaquo;</button>'
+        + '<button type="button" class="'+todayCls+'" data-nav-step="0" title="回到当前">今天</button>'
+        + '</span>';
+    }
     function makeBars(vals, labels, scope, sel, curLabel){
       var max = Math.max.apply(null, vals.concat([0]));
       if(max<=0){
@@ -3576,7 +3605,7 @@
       return '<div class="stbars" style="--bar:'+barColor+'">'+vals.map(function(v,idx){
         var h = v>0 ? Math.max(3, Math.round(v/max*100)) : 0;
         var isSel = (sel!=null && labels[idx]===sel);
-        var isNow = (labels[idx]===curLabel);
+        var isNow = (curLabel!=null && labels[idx]===curLabel);
         var cls = 'stbar'+(v>0?"":" zero")+(isNow?" hot":"")+(isSel?" sel":"");
         var attr = v>0 ? (' data-bar-idx="'+labels[idx]+'"') : "";
         return '<div class="'+cls+'"'+attr+' title="'+labels[idx]+'：'+v+unitTxt+'">'
@@ -3588,14 +3617,16 @@
     }
     function detailPanel(scope, sel, isYear){
       if(sel==null) return '';
+      var scopeY = isYear ? yy : mY;
+      var scopeM = isYear ? (sel-1) : mM;
       var recs = state.records.filter(function(r){
         if(r.module!=="sport" || !projMatch(r,chartProj)) return false;
         var d=recDate(r); if(!d) return false;
-        if(d.getFullYear()!==yy) return false;
-        if(isYear) return d.getMonth()===(sel-1);
-        return d.getMonth()===mm && d.getDate()===sel;
+        if(d.getFullYear()!==scopeY) return false;
+        if(isYear) return d.getMonth()===scopeM;
+        return d.getMonth()===scopeM && d.getDate()===sel;
       }).sort(function(a,b){ return (a.time||"").localeCompare(b.time||""); });
-      var title = isYear ? (yy+' 年 '+sel+' 月') : (yy+'/'+(mm+1)+'/'+sel);
+      var title = isYear ? (scopeY+' 年 '+sel+' 月') : (scopeY+'/'+(scopeM+1)+'/'+sel);
       if(!recs.length) return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div><div class="bd-empty">该区间暂无数据</div></div>';
       var rows = recs.map(function(r){
         var badgesHTML, body;
@@ -3628,15 +3659,23 @@
     }
     var yLabels=[]; for(var i=0;i<12;i++) yLabels.push(i+1);
     var dLabels=[]; for(var j=0;j<days;j++) dLabels.push(j+1);
+    var yearNowLabel = isCurY ? (curM+1) : null;      // 当前月高亮
+    var monNowLabel  = isCurM ? now.getDate() : null; // 今日高亮
     var yearHTML = '<div class="chart-sub" data-bar-scope="year">'
-      + '<div class="chart-sub-title">全年 <span class="csub-scope">'+yy+' 年 · '+esc(projName)+' · 合计 <b>'+yTot+'</b>'+unitTxt+'</span></div>'
-      + makeBars(yVals, yLabels, yy+' 年', chartYearSel, mm+1)
+      + '<div class="chart-sub-title">全年'
+        + '<span class="csub-scope">'+esc(projName)+' · 合计 <b>'+yTot+'</b>'+unitTxt+'</span>'
+        + navHTML("year", yy+" 年", false, yearNextDisabled, !isCurY)
+      + '</div>'
+      + makeBars(yVals, yLabels, yy+' 年', chartYearSel, yearNowLabel)
       + detailPanel(yy+' 年', chartYearSel, true)
       + '</div>';
     var monthHTML = '<div class="chart-sub" data-bar-scope="month">'
-      + '<div class="chart-sub-title">本月 <span class="csub-scope">'+yy+' 年 '+(mm+1)+' 月 · '+esc(projName)+' · 合计 <b>'+dTot+'</b>'+unitTxt+'</span></div>'
-      + makeBars(dVals, dLabels, (mm+1)+' 月', chartMonthSel, now.getDate())
-      + detailPanel((mm+1)+' 月', chartMonthSel, false)
+      + '<div class="chart-sub-title">本月'
+        + '<span class="csub-scope">'+esc(projName)+' · 合计 <b>'+dTot+'</b>'+unitTxt+'</span>'
+        + navHTML("month", mY+" 年 "+(mM+1)+" 月", false, monNextDisabled, !isCurM)
+      + '</div>'
+      + makeBars(dVals, dLabels, (mM+1)+' 月', chartMonthSel, monNowLabel)
+      + detailPanel((mM+1)+' 月', chartMonthSel, false)
       + '</div>';
     box.innerHTML = '<div class="chart-stack">'+yearHTML+monthHTML+'</div>';
   }
@@ -3927,7 +3966,6 @@
     }
     bindChartPill("chartUnit", function(v){ chartUnit=v; chartYearSel=null; chartMonthSel=null; });
     bindChartPill("chartProj", function(v){ chartProj=v; });
-
     // 日历翻月 / 点选某天（事件委托在左侧日历容器）
     var statsCal=document.querySelector("[data-stats-cal]");
     if(statsCal){
@@ -3950,18 +3988,54 @@
         }
       });
     }
-    // 柱状图点击柱看当区间的运动明细
+    // 柱状图点击柱看当区间的运动明细；点击导航切换年/月
     var statsChart=document.querySelector("[data-stats-chart]");
     if(statsChart){
       statsChart.addEventListener("click", function(e){
+        // 1) 年/月导航按钮
+        var navBtn = e.target.closest("[data-nav-step]");
+        if(navBtn){
+          if(navBtn.disabled) return;
+          var wrap = navBtn.closest("[data-nav-scope]");
+          var scope = wrap && wrap.getAttribute("data-nav-scope");
+          var step = parseInt(navBtn.getAttribute("data-nav-step"),10);
+          var now = new Date();
+          if(scope==="year"){
+            var baseY = (chartYear!=null) ? chartYear : now.getFullYear();
+            if(step===0){ chartYear=null; }
+            else { chartYear = baseY + step; }
+            chartYearSel = null;
+          }else if(scope==="month"){
+            var bM = (chartMonth && chartMonth.y!=null) ? chartMonth.y : now.getFullYear();
+            var bMm = (chartMonth && chartMonth.m!=null) ? chartMonth.m : now.getMonth();
+            if(step===0){ chartMonth=null; }
+            else {
+              var nd = new Date(bM, bMm+step, 1);
+              chartMonth = { y:nd.getFullYear(), m:nd.getMonth() };
+            }
+            chartMonthSel = null;
+          }
+          renderStatsChart();
+          return;
+        }
+        // 2) 柱子点击：展开详情；全年图额外把该月同步到本月图
         var bar=e.target.closest("[data-bar-idx]");
         if(!bar) return;
         var sub=bar.closest("[data-bar-scope]");
-        var scope=sub && sub.getAttribute("data-bar-scope");
+        var scope2=sub && sub.getAttribute("data-bar-scope");
         var idx=parseInt(bar.getAttribute("data-bar-idx"),10);
         if(!(idx>0)) return;
-        if(scope==="year"){ chartYearSel = (chartYearSel===idx) ? null : idx; }
-        else if(scope==="month"){ chartMonthSel = (chartMonthSel===idx) ? null : idx; }
+        if(scope2==="year"){
+          var toggling = (chartYearSel===idx);
+          chartYearSel = toggling ? null : idx;
+          if(!toggling){
+            // 全年图点某月 → 本月图跳到该年该月
+            var tgtY = (chartYear!=null) ? chartYear : (new Date()).getFullYear();
+            chartMonth = { y:tgtY, m:idx-1 };
+            chartMonthSel = null;
+          }
+        }
+        else if(scope2==="month"){ chartMonthSel = (chartMonthSel===idx) ? null : idx; }
         renderStatsChart();
       });
     }
