@@ -2728,21 +2728,14 @@
     }
     return r;
   }
-  // 归一化健身动作用于签名：剔除"空名称且无有效 set"的垃圾动作(常来自 raw 里的"；；"分隔)，
-  // 并剔除动作内的空 set，使得"干净版"与"带幽灵空动作的重导版"得到相同签名，从而能被去重识别。
-  function cleanExForSig(list){
-    return (list||[]).map(function(ex){
-      var name=(ex&&ex.name!=null)?String(ex.name).trim():"";
-      var sets=((ex&&ex.sets)||[]).filter(function(s){ return s && (s.w!=null || s.r!=null || (s.extra&&String(s.extra).trim())); });
-      return { name:name, sets:sets };
-    }).filter(function(ex){ return ex.name || ex.sets.length; });
-  }
   function signature(r){
     if(r.module==="thought") return "T|"+r.time+"|"+r.content;
     if(r.module==="sport"){
+      // 健身：一天只有一次，按"日期"唯一 —— 忽略时长/动作/部位差异，
+      // 任何同一天的第二条健身都视为重复，重导也会被合并成一条(保留最丰富的)。
+      if(r.sport==="健身") return "S|"+String(r.time||"").slice(0,10)+"|健身";
       var base = "S|"+r.time+"|"+r.sport+"|"+r.duration;
-      if(r.sport==="健身") base += "|"+WP.serializeExercises(cleanExForSig(r.exercises||[]));
-      else base += "|"+(r.distance==null?"":(r.distance+(r.distUnit||"")))+"|"+(r.note||"");
+      base += "|"+(r.distance==null?"":(r.distance+(r.distUnit||"")))+"|"+(r.note||"");
       return base;
     }
     if(r.module==="book")    return "B|"+r.time+"|"+r.book+"|"+r.fromPage+"|"+r.toPage;
