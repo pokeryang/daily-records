@@ -3662,33 +3662,47 @@
       }).sort(function(a,b){ return (a.time||"").localeCompare(b.time||""); });
       var title = isYear ? (scopeY+' 年 '+sel+' 月') : (scopeY+'/'+(scopeM+1)+'/'+sel);
       if(!recs.length) return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div><div class="bd-empty">该区间暂无数据</div></div>';
-      var rows = recs.map(function(r){
-        var badgesHTML, body;
-        if(r.sport==="健身"){
-          var pts=(r.parts||[]);
-          badgesHTML = pts.length
-            ? pts.map(function(p){ return '<span class="bd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
-            : '<span class="bd-badge" style="background:#94a3b8">力量</span>';
-          var names=(r.exercises||[]).map(function(e){return (e.name||"").trim();})
-                     .filter(function(x){return x;})
-                     .filter(function(n,i,arr){return arr.indexOf(n)===i;});
-          body = names.length ? names.join("、") : "（未填动作）";
-        }else{
-          var k = cardioKind(r)||"其他";
-          var ccolor = CARDIO_COLORS[k];
-          var label = r.sport||k;
-          badgesHTML = '<span class="bd-badge" style="background:'+ccolor+'">'+esc(label)+'</span>';
-          var bits=[];
-          if(r.distance!=null && r.distance!=="") bits.push(r.distance+(r.distUnit||""));
-          var du=num(r.duration); if(du!=null && du>0) bits.push(fmtDurHM(du));
-          var kc=calcCalories(r); if(kc>0) bits.push(kc+"千卡");
-          body = bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
-        }
+      // 统计展示：健身按天合并（动作名/部位去重只显示一次），有氧仍按每条展示；
+      // 消耗不在此处展示，但底层始终按真实累加，不因合并而丢失。
+      var gymRecs=recs.filter(function(r){ return r.sport==="健身"; });
+      var cardioRecs=recs.filter(function(r){ return r.sport!=="健身"; });
+      // 把健身记录按日期分组：年视角跨多天，月视角同一天
+      var gymGroups={}, gymOrder=[];
+      gymRecs.forEach(function(r){
+        var d=recDate(r); if(!d) return;
+        var key=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+        if(!gymGroups[key]){ gymGroups[key]={ list:[], date:d, t:(r.time||"") }; gymOrder.push(key); }
+        gymGroups[key].list.push(r);
+        if((r.time||"") < gymGroups[key].t || !gymGroups[key].t) gymGroups[key].t=(r.time||"");
+      });
+      var pieces=[];
+      gymOrder.forEach(function(key){
+        var g=gymGroups[key];
+        var parts=gymPartsUnion(g.list);
+        var badgesHTML = parts.length
+          ? parts.map(function(p){ return '<span class="bd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
+          : '<span class="bd-badge" style="background:#94a3b8">力量</span>';
+        var names=gymNamesUnion(g.list);
+        var body = names.length ? names.join("、") : "（未填动作）";
+        var dstr = isYear ? ((g.date.getMonth()+1)+"/"+g.date.getDate()+" ") : "";
+        pieces.push({ t:g.t, html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
+      });
+      cardioRecs.forEach(function(r){
+        var k = cardioKind(r)||"其他";
+        var ccolor = CARDIO_COLORS[k];
+        var label = r.sport||k;
+        var badgesHTML = '<span class="bd-badge" style="background:'+ccolor+'">'+esc(label)+'</span>';
+        var bits=[];
+        if(r.distance!=null && r.distance!=="") bits.push(r.distance+(r.distUnit||""));
+        var du=num(r.duration); if(du!=null && du>0) bits.push(fmtDurHM(du));
+        var kc=calcCalories(r); if(kc>0) bits.push(kc+"千卡");
+        var body = bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
         var dp = recDate(r);
         var dstr = isYear && dp ? ((dp.getMonth()+1)+"/"+dp.getDate()+" ") : "";
-        return '<div class="bd-row">'+badgesHTML
-          + '<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>';
-      }).join("");
+        pieces.push({ t:(r.time||""), html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
+      });
+      pieces.sort(function(a,b){ return (a.t||"").localeCompare(b.t||""); });
+      var rows = pieces.map(function(p){ return p.html; }).join("");
       return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div>'+rows+'</div>';
     }
     var yLabels=[]; for(var i=0;i<12;i++) yLabels.push(i+1);
@@ -3763,6 +3777,24 @@
     if(calSelDay && map[calSelDay]) html+=calDayDetailHTML(y,m,calSelDay);
     return html;
   }
+  // ---- 统计展示去重辅助（仅去重"项目/动作名"，不影响消耗累加） ----
+  // 汇总一组健身记录里的唯一动作名（跨记录合并，保持首次出现顺序）
+  function gymNamesUnion(list){
+    var seen={}, out=[];
+    (list||[]).forEach(function(r){
+      (r.exercises||[]).forEach(function(e){
+        var n=(e&&e.name!=null)?String(e.name).trim():"";
+        if(n && !seen[n]){ seen[n]=1; out.push(n); }
+      });
+    });
+    return out;
+  }
+  // 汇总一组健身记录里的唯一训练部位（跨记录合并，保持 PARTS_ALL 顺序）
+  function gymPartsUnion(list){
+    var seen={};
+    (list||[]).forEach(function(r){ (r.parts||[]).forEach(function(p){ if(p) seen[p]=1; }); });
+    return PARTS_ALL.filter(function(p){ return seen[p]; });
+  }
   // detail panel for a clicked calendar day: strength = 部位 + 项目名;
   // cardio = 项目 + 时长 + 距离.
   function calDayDetailHTML(y,m,dd){
@@ -3772,29 +3804,29 @@
     });
     var head='<div class="cd-date">'+y+' 年 '+(m+1)+' 月 '+dd+' 日</div>';
     if(!recs.length) return '<div class="cal-detail">'+head+'<div class="cd-empty">这天没有运动记录</div></div>';
-    var rows=recs.map(function(r){
-      if(r.sport==="健身"){
-        var parts=(r.parts||[]);
-        var badges = parts.length
-          ? parts.map(function(p){ return '<span class="cd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
-          : '<span class="cd-badge" style="background:#94a3b8">力量</span>';
-        var names=(r.exercises||[]).map(function(e){ return (e.name||"").trim(); })
-                    .filter(function(x){ return x; })
-                    .filter(function(n,i,arr){ return arr.indexOf(n)===i; });
-        var body=names.length ? names.join("、") : "（未填动作）";
-        return '<div class="cd-row">'+badges
-             + '<span class="cd-body">'+esc(body)+'</span></div>';
-      }else{
-        var k = cardioKind(r)||"其他";
-        var ccolor = CARDIO_COLORS[k];
-        var bits=[];
-        if(r.distance!=null) bits.push(r.distance+(r.distUnit||""));
-        var du=num(r.duration); if(du!=null && du>0) bits.push(fmtDurHM(du));
-        var kc=calcCalories(r); if(kc>0) bits.push(kc+" 千卡");
-        var body2=bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
-        return '<div class="cd-row"><span class="cd-badge" style="background:'+ccolor+'">'+esc(r.sport)+'</span>'
-             + '<span class="cd-body">'+esc(body2)+'</span></div>';
-      }
+    // 健身：当天所有力量记录合并成一行，动作名/部位去重只显示一次（消耗不在此展示，仍按真实累加）
+    var gymRecs=recs.filter(function(r){ return r.sport==="健身"; });
+    var cardioRecs=recs.filter(function(r){ return r.sport!=="健身"; });
+    var rows="";
+    if(gymRecs.length){
+      var parts=gymPartsUnion(gymRecs);
+      var badges = parts.length
+        ? parts.map(function(p){ return '<span class="cd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
+        : '<span class="cd-badge" style="background:#94a3b8">力量</span>';
+      var names=gymNamesUnion(gymRecs);
+      var body=names.length ? names.join("、") : "（未填动作）";
+      rows += '<div class="cd-row">'+badges+'<span class="cd-body">'+esc(body)+'</span></div>';
+    }
+    rows += cardioRecs.map(function(r){
+      var k = cardioKind(r)||"其他";
+      var ccolor = CARDIO_COLORS[k];
+      var bits=[];
+      if(r.distance!=null) bits.push(r.distance+(r.distUnit||""));
+      var du=num(r.duration); if(du!=null && du>0) bits.push(fmtDurHM(du));
+      var kc=calcCalories(r); if(kc>0) bits.push(kc+" 千卡");
+      var body2=bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
+      return '<div class="cd-row"><span class="cd-badge" style="background:'+ccolor+'">'+esc(r.sport)+'</span>'
+           + '<span class="cd-body">'+esc(body2)+'</span></div>';
     }).join("");
     return '<div class="cal-detail">'+head+rows+'</div>';
   }
