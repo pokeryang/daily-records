@@ -1789,8 +1789,8 @@
                 <th style="width:92px">时间</th>
                 <th style="width:96px">部位</th>
                 <th style="width:220px">项目</th>
-                <th style="width:54px">重量(kg)</th>
-                <th style="width:60px">每组个数</th>
+                <th style="width:54px">KG</th>
+                <th style="width:60px">每组</th>
                 <th style="width:42px">组数</th>
                 <th style="width:88px">消耗</th>
                 <th style="width:52px">操作</th>
@@ -2969,12 +2969,19 @@
   // ---------- 有氧训练 (cardio) ----------
   function parseDistText(sport, txt){
     var c=WP.parseCardio(sport, txt, "");
-    if(c.distance!=null) return { distance:c.distance, unit:c.unit || (sport==="游泳"?"圈":"km") };
+    if(c.distance!=null){
+      var u0=c.unit || (sport==="游泳"?"m":"km");
+      if(u0==="圈"){ return { distance:Math.round(c.distance*LAP_KM*1000), unit:"m" }; }
+      return { distance:c.distance, unit:u0 };
+    }
     var m=String(txt||"").match(/(-?\d+(?:\.\d+)?)\s*([a-zA-Z\u4e00-\u9fa5]*)/);
     if(m){
       var u=m[2]||"";
       if(/km|公里|千米/i.test(u)) u="km"; else if(/圈/.test(u)) u="圈"; else if(/m|米/i.test(u)) u="m";
-      return { distance:parseFloat(m[1]), unit:u || (sport==="游泳"?"圈":"km") };
+      if(!u) u = (sport==="游泳"?"m":"km");
+      var d=parseFloat(m[1]);
+      if(u==="圈"){ return { distance:Math.round(d*LAP_KM*1000), unit:"m" }; }
+      return { distance:d, unit:u };
     }
     return { distance:null, unit:"" };
   }
@@ -3078,7 +3085,7 @@
       {k:"time",     type:"time"},
       {k:"sport",    type:"select", opts:SPORTS},
       {k:"parts",    type:"text", ph:"胸/背/肩/腿"},
-      {k:"detail",   type:"text", ph:"健身:卧推60kg×12×3；有氧:5km 或 25圈"},
+      {k:"detail",   type:"text", ph:"健身:卧推60kg×12×3；有氧:5km 或 1250m(游泳)"},
       {k:"duration", type:"num",  ph:"分"},
       {k:"pace",     type:"ro"},
       {k:"kcal",     type:"ro"},
