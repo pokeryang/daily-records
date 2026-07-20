@@ -1757,7 +1757,7 @@
                 <span class="pill" data-val="跑步">跑步</span>
                 <span class="pill" data-val="游泳">游泳</span>
                 <span class="pill" data-val="爬山">爬山</span>
-                <span class="pill" data-val="骑车">骑车</span>
+                <span class="pill" data-val="骑行">骑行</span>
                 <span class="pill" data-val="力量">力量</span>
               </div>
             </div>
@@ -2785,9 +2785,9 @@
   var PARTS_ALL = ["胸","背","肩","腿"];
   var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
   var SPORT_GREEN = "#10b981";
-  // 有氧运动 4 类彩色: 游泳蓝 / 跑步绿 / 骑车橙 / 爬山棕
-  var CARDIO_KINDS = ["游泳","跑步","骑车","爬山","其他"];
-  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑车":"#f97316", "爬山":"#78716c", "其他":"#94a3b8" };
+  // 有氧运动 4 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕
+  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","其他"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "其他":"#94a3b8" };
   // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
   var LAP_KM = 0.05;
   // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
@@ -2805,7 +2805,7 @@
     var sp=r.sport||"";
     if(sp==="游泳") return "游泳";
     if(sp==="跑步") return "跑步";
-    if(sp==="骑行" || sp==="骑车") return "骑车";
+    if(sp==="骑行" || sp==="骑车") return "骑行";
     var txt=(r.note||"")+"|"+(r.raw||"")+"|"+(r.project||"");
     if(sp==="爬山" || /爬山|登山|徒步|hike/i.test(txt)) return "爬山";
     return "其他";
@@ -3389,7 +3389,7 @@
   var calYM = null;            // {y,m} 日历查看的月份
   var calSelDay = null;        // 点开查看详情的日
   var chartUnit = "km";        // km | kcal
-  var chartProj = "all";       // all | 跑步 | 游泳 | 爬山 | 骑车 | 力量
+  var chartProj = "all";       // all | 跑步 | 游泳 | 爬山 | 骑行 | 力量
   var chartYearSel = null;     // 全年图选中的月 idx (0-11)
   var chartMonthSel = null;    // 本月图选中的日 (1-31)
   function renderStats(){
@@ -3486,7 +3486,7 @@
   function projMatch(r, proj){
     if(proj==="all") return true;
     if(proj==="力量") return r.sport==="健身";
-    if(proj==="骑车") return r.sport==="骑行";
+    if(proj==="骑行") return r.sport==="骑行" || r.sport==="骑车";
     if(proj==="爬山") return r.sport==="爬山" || (r.sport==="其他" && /爬山|登山|徒步|hike/i.test((r.note||"")+(r.raw||"")));
     return r.sport===proj;   // 跑步 / 游泳
   }
