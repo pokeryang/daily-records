@@ -1795,6 +1795,7 @@
           <span class="fchip" data-p="肩" data-pf="肩">肩</span>
           <span class="fchip" data-p="腿" data-pf="腿">腿</span>
         </div>
+        <div class="filter-bar year-tabs" data-year-tabs="strength"></div>
         <div class="htable-wrap">
           <table class="htable auto strength">
             <thead>
@@ -1837,6 +1838,7 @@
           <span class="fchip" data-cff="爬山">爬山</span>
           <span class="fchip" data-cff="其他">其他</span>
         </div>
+        <div class="filter-bar year-tabs" data-year-tabs="cardio"></div>
         <div class="htable-wrap">
           <table class="htable auto cardio">
             <thead>
@@ -2860,6 +2862,34 @@
   }
   var strengthFilter = "";   // 部位筛选（空=全部）
   var cardioFilter = "";     // 类型筛选（空=全部）
+  var strengthYear = null;   // 年份筛选（null=全部,否则整数年）
+  var cardioYear = null;
+  function recYear(r){
+    var m = String(r&&r.time||"").match(/^(\d{4})/);
+    return m ? +m[1] : null;
+  }
+  function yearTabsHTML(kind){
+    var recs = state.records.filter(function(r){
+      if(r.module!=="sport") return false;
+      return (kind==="strength") ? (r.sport==="健身") : (r.sport && r.sport!=="健身");
+    });
+    var yset = {};
+    recs.forEach(function(r){ var y=recYear(r); if(y) yset[y]=true; });
+    var years = Object.keys(yset).map(function(x){return +x;}).sort(function(a,b){return b-a;});
+    var cur = (kind==="strength") ? strengthYear : cardioYear;
+    var html = '<span class="fl-label">年份</span>'
+      + '<span class="fchip'+(cur==null?" on":"")+'" data-yf="">全部</span>';
+    html += years.map(function(y){
+      return '<span class="fchip'+(cur===y?" on":"")+'" data-yf="'+y+'">'+y+'</span>';
+    }).join("");
+    return html;
+  }
+  function renderYearTabs(){
+    var s=document.querySelector('[data-year-tabs="strength"]');
+    if(s) s.innerHTML = yearTabsHTML("strength");
+    var c=document.querySelector('[data-year-tabs="cardio"]');
+    if(c) c.innerHTML = yearTabsHTML("cardio");
+  }
   function byTimeDesc(a,b){ return (b.time||"").localeCompare(a.time||"") || (b.createdAt||0)-(a.createdAt||0); }
   function strengthRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport==="健身"; }).sort(byTimeDesc); }
   function cardioRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport!=="健身"; }).sort(byTimeDesc); }
@@ -2918,10 +2948,12 @@
   function renderStrength(){
     var body=document.querySelector("[data-strength-body]");
     if(!body) return;
+    renderYearTabs();
     var all=strengthRecords();
     var shown=all.filter(function(r){
       return matchSearch(r, searchTerms.strength)
-        && (!strengthFilter || (r.parts||[]).indexOf(strengthFilter)>=0);
+        && (!strengthFilter || (r.parts||[]).indexOf(strengthFilter)>=0)
+        && (strengthYear==null || recYear(r)===strengthYear);
     });
     var cnt=document.getElementById("cnt-strength"); if(cnt) cnt.textContent=all.length;
     body.innerHTML = shown.length ? shown.map(strengthRowsHTML).join("")
@@ -3082,10 +3114,12 @@
   function renderCardio(){
     var body=document.querySelector("[data-cardio-body]");
     if(!body) return;
+    renderYearTabs();
     var all=cardioRecords();
     var shown=all.filter(function(r){
       return matchSearch(r, searchTerms.cardio)
-        && (!cardioFilter || r.sport===cardioFilter);
+        && (!cardioFilter || r.sport===cardioFilter)
+        && (cardioYear==null || recYear(r)===cardioYear);
     });
     var cnt=document.getElementById("cnt-cardio"); if(cnt) cnt.textContent=all.length;
     body.innerHTML = shown.length ? shown.map(cardioRowHTML).join("")
@@ -3954,6 +3988,18 @@
         renderCardio();
       });
     }
+    // 年份 tab（力量 + 有氧）—— 事件委托,元素内容是渲染时生成的
+    ["strength","cardio"].forEach(function(kind){
+      var wrap = document.querySelector('[data-year-tabs="'+kind+'"]');
+      if(!wrap) return;
+      wrap.addEventListener("click", function(e){
+        var c = e.target.closest(".fchip"); if(!c || !wrap.contains(c)) return;
+        var yv = c.getAttribute("data-yf");
+        var year = (yv==="" || yv==null) ? null : parseInt(yv,10);
+        if(kind==="strength"){ strengthYear = year; renderStrength(); }
+        else { cardioYear = year; renderCardio(); }
+      });
+    });
     // 柱状图控制：维度 / 单位 / 项目
     function bindChartPill(pill, setter){
       document.querySelectorAll('[data-pill="'+pill+'"] .pill').forEach(function(p){
