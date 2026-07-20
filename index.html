@@ -139,6 +139,16 @@
     width:100%; border:none; background:transparent; padding:7px 9px; font-size:13px; color:var(--ink); outline:none;
   }
   table.htable td .hc:focus{background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35); border-radius:6px}
+  table.htable td .hc.hc-ta{
+    display:block; resize:none; overflow:hidden; font-family:inherit; line-height:1.45;
+    white-space:pre-wrap; word-break:break-word; min-height:32px;
+  }
+  table.htable td.parts-cell .hc.hc-ta, table.htable td .hc.hc-ta{vertical-align:top}
+  @media(max-width:760px){
+    .htable-wrap{-webkit-overflow-scrolling:touch}
+    table.htable.strength{min-width:600px}
+    table.htable.cardio{min-width:600px}
+  }
   table.htable td.num .hc{text-align:right; font-variant-numeric:tabular-nums}
   table.htable td.readonly{background:#f3f5fb; color:#6b7280; padding:7px 9px; font-variant-numeric:tabular-nums; text-align:right}
   /* sticky 小区名 column for readability */
@@ -2932,10 +2942,10 @@
         cells += '<td class="span-cell" rowspan="'+span+'"><input class="hc" type="date" data-sk="time" value="'+esc(r.time.slice(0,10))+'"></td>';
         cells += '<td class="span-cell parts-cell" rowspan="'+span+'">'+partTagsHTML(r)+'</td>';
       }
-      cells += '<td><input class="hc" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.name)+'"></td>';
-      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
+      cells += '<td><textarea class="hc hc-ta" rows="1" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'" placeholder="动作">'+esc(ln.name)+'</textarea></td>';
+      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'" placeholder="kg"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'" placeholder="次数"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'" placeholder="组数"></td>';
       if(first){
         var kc=calcCalories(r);
         cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal">'+(kc>0?kc:"")+'</td>';
@@ -2958,6 +2968,7 @@
     var cnt=document.getElementById("cnt-strength"); if(cnt) cnt.textContent=all.length;
     body.innerHTML = shown.length ? shown.map(strengthRowsHTML).join("")
       : '<tr><td colspan="8" class="htable-empty">还没有力量训练记录，点下方「添加 +」开始</td></tr>';
+    autoGrowAll(body);
   }
   function strengthEdit(el){
     var tr=el.closest("tr"); if(!tr) return;
@@ -3184,6 +3195,16 @@
 
   function updTotal(){ var t=document.getElementById("totalCount"); if(t) t.textContent="共 "+state.records.length+" 条"; }
 
+  // 自适应高度的多行单元格（文本列 / 动作名）：内容多少就撑多高，手机上也能看全
+  function autoGrowTextarea(el){
+    if(!el || el.tagName!=="TEXTAREA") return;
+    el.style.height="auto";
+    el.style.height=(el.scrollHeight)+"px";
+  }
+  function autoGrowAll(root){
+    (root||document).querySelectorAll("textarea.hc").forEach(autoGrowTextarea);
+  }
+
   function renderModule(m){
     if(m==="sport"){ renderStrength(); renderCardio(); }
     else if(m==="strength") renderStrength();
@@ -3194,6 +3215,7 @@
     MODULES.forEach(renderModule);
     renderStats();
     document.getElementById("totalCount").textContent = "共 "+state.records.length+" 条";
+    autoGrowAll();
   }
 
   // ---------- interactive spreadsheet engine (all modules) ----------
@@ -3215,25 +3237,25 @@
     book: [
       {k:"time",      type:"time"},
       {k:"book",      type:"text", ph:"如 活着（余华）"},
-      {k:"fromPage",  type:"num"},
-      {k:"toPage",    type:"num"},
+      {k:"fromPage",  type:"num", ph:"起页"},
+      {k:"toPage",    type:"num", ph:"止页"},
       {k:"pagesRead", type:"ro"},
       {k:"note",      type:"text", ph:"触动 / 摘抄 / 想法"}
     ],
     house: [
       {k:"time",         type:"time", ph:"YYYY-MM-DD"},
-      {k:"district",     type:"text"},
-      {k:"metro",        type:"text"},
+      {k:"district",     type:"text", ph:"区域"},
+      {k:"metro",        type:"text", ph:"地铁 / 通勤"},
       {k:"community",    type:"text", cls:"col-comm", ph:"小区名"},
-      {k:"year",         type:"num"},
-      {k:"school",       type:"text"},
-      {k:"area",         type:"num"},
-      {k:"totalPrice",   type:"num"},
-      {k:"unitPrice",    type:"num"},
-      {k:"downPay",      type:"num"},
+      {k:"year",         type:"num", ph:"年份"},
+      {k:"school",       type:"text", ph:"学区"},
+      {k:"area",         type:"num", ph:"面积㎡"},
+      {k:"totalPrice",   type:"num", ph:"总价(万)"},
+      {k:"unitPrice",    type:"num", ph:"单价"},
+      {k:"downPay",      type:"num", ph:"首付(万)"},
       {k:"advantage",    type:"text", ph:"户型好 / 采光 / 通勤…"},
       {k:"disadvantage", type:"text", ph:"临街 / 楼层低 / 装修旧…"},
-      {k:"remark",       type:"text"}
+      {k:"remark",       type:"text", ph:"备注"}
     ]
   };
 
@@ -3315,6 +3337,8 @@
       inner='<select class="hc" data-k="'+k+'"><option value=""></option>'
         + col.opts.map(function(o){ return '<option value="'+esc(o)+'"'+(String(val)===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("")
         + '</select>';
+    }else if(col.type==="text"){
+      inner='<textarea class="hc hc-ta" rows="1" data-k="'+k+'"'+ph+'>'+esc(val)+'</textarea>';
     }else{
       var itype=(col.type==="num")?"number":"text";
       var step=(col.type==="num")?' step="any"':'';
@@ -3354,6 +3378,7 @@
     var html=shown.map(function(r){ return sheetRowHTML(m,r,cols); }).join("");
     html += sheetNewRowHTML(m, cols);   // blank trailing row = 新增
     body.innerHTML=html;
+    autoGrowAll(body);
   }
   function sheetReadRow(tr){
     var c={};
@@ -3894,6 +3919,9 @@
         var tr=inp.closest("tr");
         if(tr) sheetOnChange(m, tr);
       });
+      body.addEventListener("input", function(e){
+        if(e.target && e.target.classList && e.target.classList.contains("hc-ta")) autoGrowTextarea(e.target);
+      });
       body.addEventListener("click", function(e){
         var del=e.target.closest("[data-sheet-del]");
         if(del){ sheetDelete(m, del.getAttribute("data-sheet-del")); return; }
@@ -3937,6 +3965,14 @@
       sBody.addEventListener("change", function(e){
         var el=e.target.closest("[data-f],[data-sk]");
         if(el) strengthEdit(el);
+      });
+      sBody.addEventListener("input", function(e){
+        if(e.target && e.target.classList && e.target.classList.contains("hc-ta")) autoGrowTextarea(e.target);
+      });
+      sBody.addEventListener("keydown", function(e){
+        if(e.key==="Enter" && e.target && e.target.classList && e.target.classList.contains("hc-ta")){
+          e.preventDefault(); e.target.blur();
+        }
       });
       sBody.addEventListener("click", function(e){
         var pbtn=e.target.closest("[data-pdrop-btn]");
