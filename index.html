@@ -2617,7 +2617,7 @@
   }
   function recRichness(r){
     if(r.module!=="sport") return 0;
-    if(r.sport==="健身") return (r.exercises && r.exercises.length) ? 2 : 0;
+    if(r.sport==="健身") return ((r.exercises && r.exercises.length) ? 2 : 0) + ((r.parts && r.parts.length) ? 1 : 0);
     return (r.distance!=null) ? 2 : 0;
   }
   // Collapse records that share an identical content signature (the duplicates
@@ -2723,7 +2723,7 @@
   function signature(r){
     if(r.module==="thought") return "T|"+r.time+"|"+r.content;
     if(r.module==="sport"){
-      var base = "S|"+r.time+"|"+r.sport+"|"+(r.parts||[]).join(",")+"|"+r.duration;
+      var base = "S|"+r.time+"|"+r.sport+"|"+r.duration;
       if(r.sport==="健身") base += "|"+WP.serializeExercises(r.exercises||[]);
       else base += "|"+(r.distance==null?"":(r.distance+(r.distUnit||"")))+"|"+(r.note||"");
       return base;
@@ -2942,10 +2942,10 @@
         cells += '<td class="span-cell" rowspan="'+span+'"><input class="hc" type="date" data-sk="time" value="'+esc(r.time.slice(0,10))+'"></td>';
         cells += '<td class="span-cell parts-cell" rowspan="'+span+'">'+partTagsHTML(r)+'</td>';
       }
-      cells += '<td><textarea class="hc hc-ta" rows="1" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'" placeholder="动作">'+esc(ln.name)+'</textarea></td>';
-      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'" placeholder="kg"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'" placeholder="次数"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'" placeholder="组数"></td>';
+      cells += '<td><textarea class="hc hc-ta" rows="1" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'">'+esc(ln.name)+'</textarea></td>';
+      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
       if(first){
         var kc=calcCalories(r);
         cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal">'+(kc>0?kc:"")+'</td>';
@@ -3115,7 +3115,7 @@
         + '<input class="hc" type="number" step="1" min="0" data-cf="durM" value="'+durM+'">'
         + '<span class="du-unit">&#8243;</span>'
       + '</td>'
-      + '<td><input class="hc" data-cf="dist" placeholder="如 5km" value="'+esc(distTxt)+'"></td>'
+      + '<td><input class="hc" data-cf="dist" value="'+esc(distTxt)+'"></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
       + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="新增一条">+</button>'
@@ -3222,40 +3222,40 @@
   var SHEET_COLS = {
     thought: [
       {k:"time",    type:"time"},
-      {k:"content", type:"text", ph:"此刻的一个念头 / 一句话 / 一个问题"}
+      {k:"content", type:"text"}
     ],
     sport: [
       {k:"time",     type:"time"},
       {k:"sport",    type:"select", opts:SPORTS},
-      {k:"parts",    type:"text", ph:"胸/背/肩/腿"},
-      {k:"detail",   type:"text", ph:"健身:卧推60kg×12×3；有氧:5km 或 1250m(游泳)"},
-      {k:"duration", type:"num",  ph:"分"},
+      {k:"parts",    type:"text"},
+      {k:"detail",   type:"text"},
+      {k:"duration", type:"num"},
       {k:"pace",     type:"ro"},
       {k:"kcal",     type:"ro"},
-      {k:"note",     type:"text", ph:"状态/内容"}
+      {k:"note",     type:"text"}
     ],
     book: [
       {k:"time",      type:"time"},
-      {k:"book",      type:"text", ph:"如 活着（余华）"},
-      {k:"fromPage",  type:"num", ph:"起页"},
-      {k:"toPage",    type:"num", ph:"止页"},
+      {k:"book",      type:"text"},
+      {k:"fromPage",  type:"num"},
+      {k:"toPage",    type:"num"},
       {k:"pagesRead", type:"ro"},
-      {k:"note",      type:"text", ph:"触动 / 摘抄 / 想法"}
+      {k:"note",      type:"text"}
     ],
     house: [
-      {k:"time",         type:"time", ph:"YYYY-MM-DD"},
-      {k:"district",     type:"text", ph:"区域"},
-      {k:"metro",        type:"text", ph:"地铁 / 通勤"},
-      {k:"community",    type:"text", cls:"col-comm", ph:"小区名"},
-      {k:"year",         type:"num", ph:"年份"},
-      {k:"school",       type:"text", ph:"学区"},
-      {k:"area",         type:"num", ph:"面积㎡"},
-      {k:"totalPrice",   type:"num", ph:"总价(万)"},
-      {k:"unitPrice",    type:"num", ph:"单价"},
-      {k:"downPay",      type:"num", ph:"首付(万)"},
-      {k:"advantage",    type:"text", ph:"户型好 / 采光 / 通勤…"},
-      {k:"disadvantage", type:"text", ph:"临街 / 楼层低 / 装修旧…"},
-      {k:"remark",       type:"text", ph:"备注"}
+      {k:"time",         type:"time"},
+      {k:"district",     type:"text"},
+      {k:"metro",        type:"text"},
+      {k:"community",    type:"text", cls:"col-comm"},
+      {k:"year",         type:"num"},
+      {k:"school",       type:"text"},
+      {k:"area",         type:"num"},
+      {k:"totalPrice",   type:"num"},
+      {k:"unitPrice",    type:"num"},
+      {k:"downPay",      type:"num"},
+      {k:"advantage",    type:"text"},
+      {k:"disadvantage", type:"text"},
+      {k:"remark",       type:"text"}
     ]
   };
 
