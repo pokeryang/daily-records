@@ -430,14 +430,14 @@
   "time": "2026-07-17",
   "sport": "游泳",
   "duration": "37",
-  "project": "25圈"
+  "project": "1250m"
  },
  {
   "module": "sport",
   "time": "2026-07-15",
   "sport": "游泳",
   "duration": "30",
-  "project": "20圈"
+  "project": "1000m"
  },
  {
   "module": "sport",
@@ -460,7 +460,7 @@
   "time": "2026-07-05",
   "sport": "游泳",
   "duration": "45",
-  "project": "30圈"
+  "project": "1500m"
  },
  {
   "module": "sport",
@@ -477,7 +477,7 @@
   "time": "2026-06-17",
   "sport": "游泳",
   "duration": "60",
-  "project": "30+圈（约1小时）"
+  "project": "1500m"
  },
  {
   "module": "sport",
@@ -2063,10 +2063,13 @@
     var res = { distance:null, unit:"", duration:"", note:"" };
     var p = toHalf(project).trim();
     if(!p){ return res; }
+    // 游泳一圈=50m —— import/seed path: 圈 一律折算成 m，不再落成 "圈" 单位
     var mk = p.match(/(\d+(?:\.\d+)?)\s*\+?\s*圈/);
-    if(mk){ res.distance=parseFloat(mk[1]); res.unit="圈"; }
+    if(mk){ res.distance = Math.round(parseFloat(mk[1]) * 50); res.unit = "m"; }
     var mm = p.match(/(\d+(?:\.\d+)?)\s*(?:km|公里|千米|KM|Km)/);
     if(mm){ res.distance=parseFloat(mm[1]); res.unit="km"; }
+    var mMeter = p.match(/(\d+(?:\.\d+)?)\s*(?:m|米)(?![a-zA-Z\u4e00-\u9fa5])/);
+    if(mMeter && !mm && !mk){ res.distance=parseFloat(mMeter[1]); res.unit="m"; }
     var mh = p.match(/(\d+(?:\.\d+)?)\s*小时/);
     var mn = p.match(/(\d+(?:\.\d+)?)\s*分钟/);
     if(mh){ res.duration = String(parseFloat(mh[1])*60); }
@@ -2496,7 +2499,7 @@
         if(!r.note && c.note) r.note = c.note;
       }
       r.distance = dist;
-      if(dist!=null){ r.distUnit = unit || (sp==="游泳"?"圈":"km"); }
+      if(dist!=null){ r.distUnit = unit || (sp==="游泳"?"m":"km"); }
       else{ r.distUnit = unit || ""; }
       r.raw = rec.raw || "";
     }
