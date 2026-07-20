@@ -1,0 +1,3920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的日常记录</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --ink:#1f2430; --muted:#7a8194;
+    --line:#e7e9ef; --line-strong:#d7dae3;
+    --thought:#6366f1; --thought-soft:#eef0ff;
+    --sport:#10b981; --sport-soft:#e7f8f1;
+    --book:#f59e0b; --book-soft:#fdf3e2;
+    --house:#3b82f6; --house-soft:#e9f2ff;
+    --danger:#ef4444; --shadow:0 1px 2px rgba(20,24,40,.05),0 6px 20px rgba(20,24,40,.04);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  button{font-family:inherit; cursor:pointer}
+  input,select,textarea{font-family:inherit; font-size:14px}
+
+  /* Top bar */
+  .topbar{
+    position:sticky; top:0; z-index:20; background:rgba(244,245,247,.85);
+    backdrop-filter:saturate(160%) blur(10px); border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{max-width:1200px; margin:0 auto; padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .brand{display:flex; align-items:baseline; gap:10px}
+  .brand h1{font-size:19px; margin:0; font-weight:700; letter-spacing:.2px}
+  .brand .sub{font-size:12px; color:var(--muted)}
+  .spacer{flex:1}
+  .tools{display:flex; gap:8px; flex-wrap:wrap}
+  .btn{
+    border:1px solid var(--line-strong); background:var(--panel); color:var(--ink);
+    padding:8px 13px; border-radius:10px; font-size:13px; font-weight:600; transition:.15s;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{border-color:#b9bece; transform:translateY(-1px)}
+  .btn.primary{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .btn.primary:hover{opacity:.9}
+  .btn.ghost{background:transparent}
+  .btn.tiny{padding:4px 9px; font-size:12px; border-radius:8px}
+  .btn.danger{color:var(--danger); border-color:#f3c3c3}
+  .btn.danger:hover{background:#fdecec}
+
+  /* Layout grid: 2 x 2 even */
+  .wrap{max-width:1200px; margin:0 auto; padding:22px}
+  .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); display:flex; flex-direction:column; overflow:hidden; min-height:340px;
+  }
+  .card-head{padding:16px 18px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line)}
+  .dot{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-size:18px; flex:none}
+  .card[data-m="thought"] .dot{background:var(--thought-soft)}
+  .card[data-m="sport"]   .dot{background:var(--sport-soft)}
+  .card[data-m="book"]    .dot{background:var(--book-soft)}
+  .card[data-m="house"]   .dot{background:var(--house-soft)}
+  .card-title{font-size:16px; font-weight:700}
+  .card-title .cnt{font-size:12px; color:var(--muted); font-weight:600; margin-left:6px}
+  .accent{width:100%; height:3px}
+  .card[data-m="thought"] .accent{background:var(--thought)}
+  .card[data-m="sport"]   .accent{background:var(--sport)}
+  .card[data-m="book"]    .accent{background:var(--book)}
+  .card[data-m="house"]   .accent{background:var(--house)}
+
+  .card-body{padding:16px 18px; display:flex; flex-direction:column; gap:14px; flex:1}
+
+  /* Form */
+  .form{display:grid; gap:10px}
+  .row{display:grid; gap:10px; grid-template-columns:1fr 1fr}
+  .row.three{grid-template-columns:1fr 1fr 1fr}
+  .field{display:flex; flex-direction:column; gap:4px}
+  .field.full{grid-column:1/-1}
+  label{font-size:12px; color:var(--muted); font-weight:600}
+  input,select,textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line-strong); border-radius:10px;
+    background:#fbfbfd; color:var(--ink); outline:none; transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:#9aa0b4; background:#fff; box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+  textarea{resize:vertical; min-height:52px}
+  .form-actions{display:flex; gap:8px; align-items:center}
+  .hint{font-size:12px; color:var(--muted)}
+  .pill-group{display:flex; gap:6px; flex-wrap:wrap}
+  .pill{
+    border:1px solid var(--line-strong); background:#fbfbfd; padding:6px 12px; border-radius:999px;
+    font-size:13px; font-weight:600; color:var(--muted); user-select:none;
+  }
+  .pill.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .card[data-m="sport"] .pill.on{background:var(--sport); border-color:var(--sport)}
+
+  /* Search + list */
+  .list-tools{display:flex; gap:8px; align-items:center}
+  .search{flex:1; padding:7px 11px}
+  .list{display:flex; flex-direction:column; gap:8px; overflow:auto; max-height:420px; padding-right:2px}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:24px 0; border:1px dashed var(--line-strong); border-radius:12px}
+  .item{
+    border:1px solid var(--line); border-radius:12px; padding:11px 12px; background:#fcfcfe;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .item:hover{border-color:var(--line-strong)}
+  .item-top{display:flex; align-items:center; gap:8px}
+  .item-time{font-size:12px; color:var(--muted); font-weight:600}
+  .tag{font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px}
+  .tag.sport{background:var(--sport-soft); color:#0a7d5b}
+  .tag.house-new{background:#e9f2ff; color:#1d5fd6}
+  .tag.house-old{background:#fff0e6; color:#c25b12}
+  .item-main{font-size:14px; white-space:pre-wrap; word-break:break-word}
+  .item-sub{font-size:13px; color:#4b5163}
+  .kv{display:flex; flex-wrap:wrap; gap:x; gap:4px 14px}
+  .kv span b{color:var(--ink); font-weight:600}
+  .item-actions{display:flex; gap:6px; justify-content:flex-end}
+  .badge-up{font-size:11px; font-weight:700; color:var(--sport)}
+  .pro{color:#0a7d5b}
+  .con{color:#c0392b}
+
+  /* House comparison table (full-width, spreadsheet style) */
+  .card.wide{grid-column:1/-1}
+  .htable-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .htable-wrap{overflow:auto; border:1px solid var(--line); border-radius:12px; max-height:520px}
+  table.htable{border-collapse:separate; border-spacing:0; width:100%; min-width:1080px; font-size:13px}
+  table.htable th, table.htable td{border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:0; text-align:left; white-space:nowrap}
+  table.htable th:last-child, table.htable td:last-child{border-right:none}
+  table.htable thead th{
+    position:sticky; top:0; z-index:3; background:var(--house-soft); color:#1d5fd6;
+    font-weight:700; padding:8px 10px; font-size:12px; border-bottom:1px solid var(--line-strong);
+  }
+  table.htable tbody tr:nth-child(even){background:#fafbff}
+  table.htable tbody tr:hover{background:#eef4ff}
+  table.htable td .hc{
+    width:100%; border:none; background:transparent; padding:7px 9px; font-size:13px; color:var(--ink); outline:none;
+  }
+  table.htable td .hc:focus{background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35); border-radius:6px}
+  table.htable td.num .hc{text-align:right; font-variant-numeric:tabular-nums}
+  table.htable td.readonly{background:#f3f5fb; color:#6b7280; padding:7px 9px; font-variant-numeric:tabular-nums; text-align:right}
+  /* sticky 小区名 column for readability */
+  table.htable th.col-comm, table.htable td.col-comm{position:sticky; left:0; z-index:2; background:var(--panel)}
+  table.htable thead th.col-comm{z-index:4; background:var(--house-soft)}
+  table.htable tbody tr:nth-child(even) td.col-comm{background:#fafbff}
+  table.htable td.col-comm .hc{font-weight:600}
+  .hc-del{border:none; background:transparent; color:var(--danger); font-size:15px; padding:6px 8px; line-height:1; border-radius:6px}
+  .hc-del:hover{background:#fdecec}
+  .htable-empty{color:var(--muted); font-size:13px; text-align:center; padding:24px 0}
+
+  /* Generalized spreadsheet (thought / sport / book reuse .htable) */
+  table.htable.auto{min-width:0}
+  table.htable td select.hc{
+    width:100%; border:none; background:transparent; padding:7px 9px; font-size:13px;
+    color:var(--ink); outline:none; appearance:auto; -webkit-appearance:auto;
+  }
+  table.htable td select.hc:focus{background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35); border-radius:6px}
+  table.htable td.sheet-act{width:44px; text-align:center}
+  table.htable tbody tr.sheet-new{background:#f6faff}
+  table.htable tbody tr:nth-child(even).sheet-new{background:#f6faff}
+  table.htable tbody tr.sheet-new td{border-bottom:none}
+  table.htable tbody tr.sheet-new td.col-comm{background:#f6faff}
+  table.htable tbody tr.sheet-new .hc::placeholder{color:#9aa9c6}
+
+  /* hover-reveal row delete (replaces the old ✕ column) */
+  table.htable td.tcell{position:relative}
+  table.htable td.tcell .hc{padding-right:22px}
+  .row-del{position:absolute; top:50%; right:3px; transform:translateY(-50%);
+    border:none; background:transparent; color:var(--danger); font-size:12px; line-height:1;
+    padding:3px 4px; border-radius:5px; cursor:pointer; opacity:0; transition:opacity .12s}
+  table.htable tbody tr:hover .row-del{opacity:.6}
+  .row-del:hover{opacity:1; background:#fdecec}
+
+  /* split sport: 力量训练 / 有氧训练 / 运动统计 reuse sport colors */
+  .card[data-m="strength"] .dot,.card[data-m="cardio"] .dot,.card[data-m="sportstats"] .dot{background:var(--sport-soft)}
+  .card[data-m="strength"] .accent,.card[data-m="cardio"] .accent,.card[data-m="sportstats"] .accent{background:var(--sport)}
+  .card[data-m="sportstats"] .pill.on{background:var(--sport); border-color:var(--sport); color:#fff}
+  .sheet-add{margin-top:10px; width:100%; padding:9px 0; border:1px solid var(--line-strong); border-radius:999px;
+    background:#f7f9ff; color:#5b6b8c; font-size:13px; font-weight:600; cursor:pointer; transition:.12s}
+  .sheet-add:hover{background:#eef4ff; color:var(--sport); border-color:var(--sport)}
+  table.htable.strength, table.htable.cardio{min-width:0}
+  table.htable.strength tbody tr:nth-child(even), table.htable.cardio tbody tr:nth-child(even){background:transparent}
+  table.htable.strength tbody tr:hover, table.htable.cardio tbody tr:hover{background:#eef4ff}
+  table.htable.strength tbody tr.session-top:not(:first-child) td{border-top:2px solid var(--line-strong)}
+  table.htable td.span-cell{vertical-align:middle; background:#fbfcff; font-variant-numeric:tabular-nums}
+  table.htable td.setact, table.htable td.rowact{white-space:nowrap; text-align:center; padding:2px 1px}
+  .mini-btn{width:22px; height:22px; border:1px solid var(--line-strong); border-radius:6px; background:#fbfbfd;
+    color:#5b6b8c; font-size:14px; line-height:1; padding:0; cursor:pointer; margin:0 1px; vertical-align:middle}
+  .mini-btn:hover{background:#eef4ff; color:var(--sport); border-color:var(--sport)}
+  .mini-btn.minus:hover{color:var(--danger); border-color:#f3c3c3; background:#fdecec}
+  table.htable td .hc[type="date"]{padding:6px 6px; font-size:12px}
+  /* 隐藏原生 date 输入右侧的日历/箭头图标（webkit/gecko） */
+  .hc[type="date"]{background-image:none; appearance:none; -webkit-appearance:none}
+  .hc[type="date"]::-webkit-calendar-picker-indicator{display:none; -webkit-appearance:none; opacity:0; width:0; margin:0; padding:0}
+  .hc[type="date"]::-webkit-inner-spin-button, .hc[type="date"]::-webkit-clear-button{display:none}
+  /* number inputs: 隐藏浏览器自带上下增减按钮 */
+  .hc[type="number"]{appearance:textfield; -moz-appearance:textfield}
+  .hc[type="number"]::-webkit-inner-spin-button, .hc[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none; appearance:none; margin:0}
+
+  /* 部位多选：下拉组件（只展示已选部位） */
+  table.htable td.parts-cell{white-space:normal; vertical-align:middle; padding:5px 6px}
+
+  /* 表格上方筛选条 */
+  .filter-bar{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+  .filter-bar .fl-label{font-size:11px; color:var(--muted); font-weight:700; margin-right:2px}
+  .fchip{font-size:12px; font-weight:600; padding:3px 11px; border-radius:999px; cursor:pointer; user-select:none;
+    border:1px solid var(--line-strong); background:#fbfbfd; color:var(--muted); transition:.12s}
+  .fchip:hover{border-color:var(--sport)}
+  .fchip.on{background:var(--sport); border-color:var(--sport); color:#fff}
+  .fchip.on[data-p="胸"]{background:#e0453f; border-color:#e0453f}
+  .fchip.on[data-p="背"]{background:#2f6fe0; border-color:#2f6fe0}
+  .fchip.on[data-p="肩"]{background:#d98207; border-color:#d98207}
+  .fchip.on[data-p="腿"]{background:#7c3aed; border-color:#7c3aed}
+
+  /* 统计视角：日历 + 周进度 */
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
+  .cal-nav button{border:1px solid var(--line-strong); background:#fbfbfd; border-radius:8px; padding:2px 12px; font-size:15px; line-height:1; cursor:pointer; color:#5b6b8c}
+  .cal-nav button:hover{border-color:var(--sport); color:var(--sport)}
+  .cal-title{font-size:13px; font-weight:700}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+  .cal-dow{font-size:10px; color:var(--muted); text-align:center; font-weight:700; padding-bottom:1px}
+  .cal-cell{min-height:46px; border:1px solid var(--line); border-radius:8px; padding:3px 4px; display:flex; flex-direction:column; overflow:hidden}
+  .cal-cell.empty{border:none; background:transparent}
+  .cal-cell.today{border-color:var(--sport); box-shadow:inset 0 0 0 1px var(--sport)}
+  .cal-cell.has{cursor:pointer}
+  .cal-cell.has:hover{border-color:var(--sport)}
+  .cal-cell.sel{border-color:var(--sport); background:var(--sport-soft)}
+  .cal-detail{margin-top:10px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12px}
+  .cal-detail .cd-date{font-weight:700; margin-bottom:6px}
+  .cal-detail .cd-row{display:flex; gap:6px; align-items:baseline; padding:3px 0; border-top:1px dashed var(--line)}
+  .cal-detail .cd-row:first-of-type{border-top:none}
+  .cal-detail .cd-badge{flex:none; display:inline-block; min-width:34px; text-align:center; color:#fff; border-radius:6px; padding:1px 6px; font-size:11px}
+  .cal-detail .cd-body{color:var(--ink)}
+  .cal-detail .cd-empty{color:var(--muted)}
+  .cal-day{font-size:10px; color:var(--muted); line-height:1.2}
+  .cal-dots{display:flex; flex-wrap:wrap; gap:3px; margin-top:auto}
+  .cal-dot{width:9px; height:9px; border-radius:50%}
+  .cal-dot.sq{border-radius:2px}
+  .cal-legend{display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--muted)}
+  .cal-legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle}
+
+  /* house image column */
+  table.htable td.himg-cell{white-space:normal; min-width:132px; padding:5px 8px; vertical-align:middle}
+  .himgs{display:flex; gap:5px; align-items:center; flex-wrap:wrap}
+  .himg{position:relative; width:40px; height:40px; border-radius:7px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
+  .himg img{width:100%; height:100%; object-fit:cover; display:block}
+  .himg .himg-x{position:absolute; top:0; right:0; background:rgba(0,0,0,.55); color:#fff; border:none;
+    font-size:9px; line-height:1; padding:1px 3px; cursor:pointer; border-bottom-left-radius:6px; opacity:0}
+  .himg:hover .himg-x{opacity:1}
+  .himg-add{width:40px; height:40px; border:1px dashed var(--line-strong); border-radius:7px; background:#f7f9ff;
+    color:#8aa0c8; font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+  .himg-add:hover{background:#eef4ff; color:var(--house)}
+  .himg-hint{color:var(--muted); font-size:12px}
+
+  /* image lightbox */
+  #imgLightbox{position:fixed; inset:0; background:rgba(15,18,30,.82); display:none; align-items:center; justify-content:center; z-index:200; padding:24px; cursor:zoom-out}
+  #imgLightbox.on{display:flex}
+  #imgLightbox img{max-width:92%; max-height:92%; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.4)}
+
+  /* Exercise detail (structured strength training) */
+  .ex-table{width:100%; border-collapse:collapse; font-size:13px}
+  .ex-table th{font-size:11px; font-weight:600; color:var(--muted); text-align:left; padding:2px 4px 4px}
+  .ex-table th:nth-child(2),.ex-table th:nth-child(3),.ex-table th:nth-child(4){text-align:center}
+  .ex-table td{padding:2px}
+  .ex-table col{}
+  .ex-table td input{width:100%; padding:6px 7px; text-align:center}
+  .ex-table td:first-child input{text-align:left}
+  .ex-table td.c-del{width:30px}
+  .ex-table .c-w,.ex-table .c-r,.ex-table .c-n{width:100%}
+  .ex-table .c-nm{min-width:70px}
+  .ex-table .ex-del{border:1px solid var(--line-strong); background:#fbfbfd; color:var(--muted);
+    width:28px; height:30px; border-radius:8px; font-size:16px; line-height:1; padding:0}
+  .ex-table .ex-del:hover{color:var(--danger); border-color:#f3c3c3; background:#fdecec}
+  .ex-detail{display:flex; flex-direction:column; gap:3px; margin:2px 0 2px}
+  .ex-line{font-size:13px; display:flex; gap:8px; flex-wrap:wrap; align-items:baseline}
+  .ex-line .ex-nm{font-weight:700; color:var(--ink); flex:none}
+  .ex-line .ex-st{color:#4b5163; word-break:break-word}
+  .sum-kv span{background:var(--sport-soft); color:#0a7d5b; padding:1px 8px; border-radius:999px; font-weight:600; font-size:11.5px}
+  .sum-kv span.kcal{background:#fff2e6; color:#c2410c}
+
+  /* Stats panel */
+  .stats{border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:2px 0 12px; background:#fafbfc}
+  .stats-head{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px}
+  .stats-head .st-title{font-weight:700; font-size:13px; color:var(--ink)}
+  .stats-range{display:flex; gap:4px}
+  .stats-range .pill{padding:3px 10px; font-size:12px}
+  .st-metrics{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .st-metric{background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center}
+  .st-metric b{display:block; font-size:19px; color:var(--ink); line-height:1.1}
+  .st-metric span{font-size:11px; color:var(--muted)}
+  .st-metric.kcal b{color:#c2410c}
+  .st-break{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .st-break span{font-size:11.5px; background:var(--sport-soft); color:#0a7d5b; padding:2px 8px; border-radius:999px}
+  .st-empty{font-size:12px; color:var(--muted); padding:4px 0}
+  .st-weight{font-size:11px; color:var(--muted)}
+  .st-weight input{width:46px; padding:2px 4px; font-size:11px; text-align:center; margin:0 2px}
+
+  /* 部位下拉多选（力量表格内，仅展示已选部位） */
+  .pdrop{position:relative}
+  .pdrop-btn{display:flex; align-items:center; gap:4px; flex-wrap:wrap; min-height:26px; width:100%;
+    border:1px solid transparent; border-radius:7px; background:transparent; padding:4px 6px; cursor:pointer; text-align:left}
+  .pdrop-btn:hover{background:#fff; border-color:var(--line)}
+  .pdrop.open .pdrop-btn{background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35)}
+  .pdrop-ph{font-size:11px; color:#9aa9c6}
+  .pdrop-caret{margin-left:auto; font-size:9px; color:#9aa9c6}
+  .pchip{font-size:11px; font-weight:600; padding:1px 8px; border-radius:999px; line-height:1.6}
+  .pchip[data-p="胸"]{color:#e0453f; background:#fdeae9}
+  .pchip[data-p="背"]{color:#2f6fe0; background:#e7f0fe}
+  .pchip[data-p="肩"]{color:#d98207; background:#fdefd9}
+  .pchip[data-p="腿"]{color:#7c3aed; background:#efe6fd}
+  .pdrop-menu{position:absolute; top:100%; left:0; z-index:20; margin-top:3px; display:none;
+    background:#fff; border:1px solid var(--line-strong); border-radius:10px; padding:7px; gap:5px;
+    box-shadow:0 8px 24px rgba(20,30,60,.14); flex-wrap:wrap; width:max-content; max-width:180px}
+  .pdrop.open .pdrop-menu{display:flex}
+  .pdrop-item{display:flex; align-items:center; gap:6px; width:100%; padding:5px 8px; border-radius:7px;
+    font-size:12px; color:var(--ink); cursor:pointer; user-select:none}
+  .pdrop-item:hover{background:#f2f6ff}
+  .pdrop-item.on{background:#eef4ff; font-weight:600}
+  .pdot{width:10px; height:10px; border-radius:3px; flex:none}
+  .pcheck{margin-left:auto; color:#2f6fe0; font-size:11px; visibility:hidden}
+  .pdrop-item.on .pcheck{visibility:visible}
+
+  /* 统计：左日历 + 右柱状图 两栏 */
+  .stats-2col{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
+  @media(max-width:760px){.stats-2col{grid-template-columns:1fr}}
+  .stpanel{border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:#fafbfc}
+  .stpanel-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px}
+  .stpanel-title{font-weight:700; font-size:13px; color:var(--ink)}
+  .stpanel-head .pill-group{margin-left:auto}
+
+  /* 左侧总览 3 块（有氧时长/力量训练/消耗） */
+  .ov-grid{display:flex; flex-direction:column; gap:8px; margin-bottom:10px}
+  .ov-block{border:1px solid var(--line); border-radius:10px; padding:8px 12px; background:#fff;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .ov-icon{width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:15px; flex:none}
+  .ov-meta{display:flex; align-items:baseline; gap:4px; min-width:0}
+  .ov-label{font-size:11px; color:var(--muted); margin-right:4px}
+  .ov-main{font-size:18px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1}
+  .ov-unit{font-size:11px; color:var(--muted)}
+  .ov-chips{display:flex; gap:5px; flex-wrap:wrap; margin-left:auto}
+  .ov-chip{font-size:11px; font-weight:600; padding:2px 8px 2px 6px; border-radius:999px; color:var(--ink); background:#f2f4fa; white-space:nowrap; display:inline-flex; align-items:center; gap:5px}
+  .ov-chip i{width:8px; height:8px; border-radius:50%; flex:none; display:inline-block}
+  .ov-chip.empty{background:#e5e9f2; color:var(--muted)}
+  .ov-chips.ov-empty{color:var(--muted); font-size:11px; font-style:italic}
+
+  /* 右侧柱状图：上下两图叠放 */
+  .chart-ctrls{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+  .chart-ctrls .pill-group .pill{padding:3px 9px; font-size:11.5px}
+  .chart-stack{display:flex; flex-direction:column; gap:14px}
+  .chart-sub{}
+  .chart-sub-title{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px; display:flex; align-items:center; gap:8px}
+  .chart-sub-title .csub-scope{font-size:11px; color:var(--muted); font-weight:400}
+  .st-chart{--bar:var(--sport)}
+  .stbars{display:flex; align-items:flex-end; gap:3px; height:140px; padding:4px 2px 0; overflow-x:auto}
+  .stbar{flex:1 0 auto; min-width:14px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; cursor:pointer}
+  .stbar .stbar-fill{width:70%; max-width:22px; background:var(--bar); border-radius:4px 4px 0 0; transition:height .18s,filter .12s; min-height:2px}
+  .stbar.zero{cursor:default}
+  .stbar.zero .stbar-fill{background:#e5e9f2}
+  .stbar .stbar-val{font-size:9px; color:var(--muted); margin-bottom:2px; font-variant-numeric:tabular-nums; white-space:nowrap; height:12px}
+  .stbar .stbar-x{font-size:9px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums}
+  .stbar.hot .stbar-fill{filter:none}
+  .stbar.sel .stbar-fill{outline:2px solid rgba(20,30,60,.28); outline-offset:1px; filter:brightness(.9)}
+  .chart-empty{font-size:12px; color:var(--muted); padding:20px 0; text-align:center}
+  .chart-total{font-size:11px; color:var(--muted); margin-top:6px}
+  .chart-total b{color:var(--ink); font-variant-numeric:tabular-nums}
+  .bar-detail{margin-top:8px; border-top:1px dashed var(--line); padding-top:6px}
+  .bar-detail .bd-title{font-size:11px; color:var(--muted); margin-bottom:5px}
+  .bar-detail .bd-row{display:flex; gap:6px; align-items:baseline; padding:3px 0; font-size:11.5px; color:var(--ink)}
+  .bar-detail .bd-badge{font-size:10px; color:#fff; padding:1px 7px; border-radius:999px; flex:none; font-weight:600}
+  .bar-detail .bd-body{flex:1; min-width:0}
+  .bar-detail .bd-empty{font-size:11.5px; color:var(--muted); font-style:italic}
+
+  /* Modal */
+  .modal-back{position:fixed; inset:0; background:rgba(20,24,40,.4); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+  .modal-back.on{display:flex}
+  .modal{background:#fff; border-radius:16px; width:min(640px,100%); max-height:86vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal h3{margin:0; padding:18px 20px; border-bottom:1px solid var(--line); font-size:16px}
+  .modal-body{padding:18px 20px; display:flex; flex-direction:column; gap:12px}
+  .modal textarea{min-height:200px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px}
+  .modal-foot{padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end}
+
+  /* Toast */
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:12px; font-size:13.5px; font-weight:600;
+    opacity:0; pointer-events:none; transition:.25s; z-index:80; box-shadow:0 10px 30px rgba(0,0,0,.25); max-width:90vw;
+  }
+  .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+  .toast.err{background:#b3261e}
+  .footer{max-width:1200px; margin:0 auto; padding:6px 22px 40px; color:var(--muted); font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+  QoderWork 自动导入区（SEED_DATA）
+  ------------------------------------------------------------
+  我（QoderWork）把你口述/整理的记录整理成下面数组里的对象即可，
+  你无需任何手动操作：下次打开本页会自动校验 + 去重后并入本地数据。
+  每条记录已导入过就不会重复添加；即便你后来删掉了，也不会被重新塞回。
+
+  各模块字段格式（time 用 "YYYY-MM-DD HH:mm" 或 "YYYY-MM-DD"）：
+  思考:  {"module":"thought","time":"2026-07-19 09:30","content":"..."}
+  运动:  {"module":"sport","time":"2026-07-19 07:00","sport":"健身","parts":["胸","肩"],
+          "project":"卧推·飞鸟","sets":"","duration":""}
+          // sport: 游泳/跑步/骑行/健身/其他；parts 仅健身用、可多个(胸/背/肩/腿)；duration 分钟；健身+有氧当天拆成两条
+  读书:  {"module":"book","time":"2026-07-19 22:00","book":"活着（余华）",
+          "fromPage":"12","toPage":"58","note":"（可省略）"}
+  看房:  {"module":"house","time":"2026-07-19 15:00","community":"翠湖天地",
+          "houseType":"二手","room":"3-2-501","area":"89","totalPrice":"620",
+          "advantage":"...","disadvantage":"...","idea":"..."}   // houseType: 新房/二手；totalPrice 单位万
+  提示：可给每条加 "id":"你自定义的稳定ID" 以精确去重；不给则按内容自动生成签名去重。
+============================================================ -->
+<script id="seed-data" type="application/json">
+[
+ {
+  "module": "sport",
+  "time": "2026-07-17",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "史密斯卧推30kg×10+40kg×10；自由卧推30kg×8×2（状态不好,浅浅推）；器械推胸35kg×8；夹胸45kg×12+47.5kg×12×3"
+ },
+ {
+  "module": "sport",
+  "time": "2026-07-17",
+  "sport": "游泳",
+  "duration": "37",
+  "project": "25圈"
+ },
+ {
+  "module": "sport",
+  "time": "2026-07-15",
+  "sport": "游泳",
+  "duration": "30",
+  "project": "20圈"
+ },
+ {
+  "module": "sport",
+  "time": "2026-07-13",
+  "sport": "健身",
+  "parts": [
+   "背",
+   "肩"
+  ],
+  "project": "引体向上27.5kg×11+25kg×12×2+27.5kg×12；高位下拉40kg×12×3；坐姿划船95kg×12×2+87.5kg×12×2；侧平举5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2026-07-12",
+  "sport": "跑步",
+  "project": "6km"
+ },
+ {
+  "module": "sport",
+  "time": "2026-07-05",
+  "sport": "游泳",
+  "duration": "45",
+  "project": "30圈"
+ },
+ {
+  "module": "sport",
+  "time": "2026-06-21",
+  "sport": "健身",
+  "parts": [
+   "背",
+   "肩"
+  ],
+  "project": "引体向上27.5kg×10×4；高位下拉(一体机)42.5kg×12×4；坐姿划船80kg×12×4；哑铃推肩10kg×12×4；侧平举5kg×10×4"
+ },
+ {
+  "module": "sport",
+  "time": "2026-06-17",
+  "sport": "游泳",
+  "duration": "60",
+  "project": "30+圈（约1小时）"
+ },
+ {
+  "module": "sport",
+  "time": "2026-06-15",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "推胸20kg×12+30kg×8×3；夹胸50kg×12×2+47.5kg×12×2；推胸35kg×8×3"
+ },
+ {
+  "module": "sport",
+  "time": "2026-05-30",
+  "sport": "跑步",
+  "project": "7公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-05-25",
+  "sport": "跑步",
+  "project": "5公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-05-16",
+  "sport": "跑步",
+  "project": "23公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-05-10",
+  "sport": "骑行",
+  "project": "20公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-05-06",
+  "sport": "跑步",
+  "duration": "49",
+  "project": "7公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-04-21",
+  "sport": "其他",
+  "project": "快走4公里"
+ },
+ {
+  "module": "sport",
+  "time": "2026-04-08",
+  "sport": "骑行",
+  "duration": "60",
+  "project": "1小时"
+ },
+ {
+  "module": "sport",
+  "time": "2026-04-01",
+  "sport": "骑行",
+  "duration": "90",
+  "project": "1.5小时"
+ },
+ {
+  "module": "sport",
+  "time": "2026-03-14",
+  "sport": "骑行",
+  "duration": "180",
+  "project": "3小时"
+ },
+ {
+  "module": "sport",
+  "time": "2026-03-11",
+  "sport": "骑行",
+  "duration": "50"
+ },
+ {
+  "module": "sport",
+  "time": "2026-03-01",
+  "sport": "骑行",
+  "duration": "55"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-29",
+  "sport": "骑行",
+  "duration": "58"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-29",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑30"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-24",
+  "sport": "骑行",
+  "duration": "57"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-24",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑30"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-11",
+  "sport": "其他",
+  "project": "爬山"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-10",
+  "sport": "骑行",
+  "duration": "51"
+ },
+ {
+  "module": "sport",
+  "time": "2026-01-06",
+  "sport": "骑行",
+  "duration": "60",
+  "project": "1小时"
+ },
+ {
+  "module": "sport",
+  "time": "2025-12-14",
+  "sport": "骑行",
+  "duration": "60",
+  "project": "1小时"
+ },
+ {
+  "module": "sport",
+  "time": "2025-12-08",
+  "sport": "骑行",
+  "duration": "55"
+ },
+ {
+  "module": "sport",
+  "time": "2025-12-03",
+  "sport": "骑行",
+  "duration": "55"
+ },
+ {
+  "module": "sport",
+  "time": "2025-12-02",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑40"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-15",
+  "sport": "骑行",
+  "duration": "48"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-15",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑40"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-11",
+  "sport": "骑行",
+  "duration": "40"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-11",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑40"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-04",
+  "sport": "骑行",
+  "duration": "45"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-04",
+  "sport": "健身",
+  "parts": [],
+  "project": "俯卧撑30"
+ },
+ {
+  "module": "sport",
+  "time": "2025-11-01",
+  "sport": "骑行",
+  "duration": "35"
+ },
+ {
+  "module": "sport",
+  "time": "2025-10-31",
+  "sport": "骑行",
+  "duration": "45"
+ },
+ {
+  "module": "sport",
+  "time": "2025-10-27",
+  "sport": "骑行",
+  "duration": "43"
+ },
+ {
+  "module": "sport",
+  "time": "2025-10-10",
+  "sport": "跑步",
+  "project": "5公里"
+ },
+ {
+  "module": "sport",
+  "time": "2025-09-29",
+  "sport": "跑步",
+  "project": "3.7公里"
+ },
+ {
+  "module": "sport",
+  "time": "2025-09-28",
+  "sport": "跑步",
+  "project": "2.2公里"
+ },
+ {
+  "module": "sport",
+  "time": "2025-09-15",
+  "sport": "骑行",
+  "duration": "35"
+ },
+ {
+  "module": "sport",
+  "time": "2025-09-11",
+  "sport": "跑步",
+  "duration": "31",
+  "project": "户外5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-08-23",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推40kg×12+50kg×12+60kg×12×2+60kg×10；夹胸55kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-08-23",
+  "sport": "跑步",
+  "duration": "30"
+ },
+ {
+  "module": "sport",
+  "time": "2025-08-02",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上20kg×12×4；高位下拉60kg×12×4；窄距下拉95kg×12×4；坐姿划船95kg×12"
+ },
+ {
+  "module": "sport",
+  "time": "2025-08-02",
+  "sport": "跑步",
+  "duration": "30"
+ },
+ {
+  "module": "sport",
+  "time": "2025-07-13",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推50kg×12+60kg×12+60kg×8+60kg×12；夹胸55kg×12×3"
+ },
+ {
+  "module": "sport",
+  "time": "2025-07-13",
+  "sport": "跑步",
+  "duration": "15"
+ },
+ {
+  "module": "sport",
+  "time": "2025-06-18",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "卧推机50kg×12；自由卧推60kg×12+60kg×8×2；夹胸50kg×12+55kg×12×3；侧平举7.5kg×12×3+5kg×12"
+ },
+ {
+  "module": "sport",
+  "time": "2025-06-14",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上20kg×12×4；上拉划船25kg×12×4；高位下拉40kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-06-10",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "自由卧推50kg×12+60kg×10+60kg×7×2；夹胸55kg×12+50kg×12+47.5kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-06-10",
+  "sport": "跑步",
+  "project": "（未记录时长/距离）"
+ },
+ {
+  "module": "sport",
+  "time": "2025-04-23",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "自由卧推50kg×12+60kg×12+70kg×7+70kg×8；夹胸57.5kg×12×3+55kg×12；侧平举7.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-04-09",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "自由卧推60kg×12+70kg×10+70kg×8；上斜17.5kg×12×3；夹胸57.5kg×12×2+55kg×12+55kg×10；侧平举5kg×15×2+5kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-04-09",
+  "sport": "跑步",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-04-06",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上15kg×12×4；上拉划船25kg×12×4；高位下拉45kg×12×3"
+ },
+ {
+  "module": "sport",
+  "time": "2025-04-06",
+  "sport": "跑步",
+  "duration": "32",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-27",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "自由卧推50kg×12+60kg×12+70kg×11+70kg×8；夹胸57.5kg×12+57.5kg×10+55kg×12×2；上斜17.5kg×12×3；侧平举5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-26",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上15kg×12×4；上拉划船25kg×12×4；坐姿划船95kg×12×3；高位下拉45kg×12+45kg×10×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-19",
+  "sport": "健身",
+  "parts": [
+   "腿"
+  ],
+  "project": "深蹲40kg×12+60kg×8+70kg×8×3；哈克深蹲(背靠)50kg×10×4；坐姿腿屈伸30kg×12×4；臀推15kg×12+20kg×12"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-18",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "自由卧推50kg×12+60kg×12×2+70kg×10×2；夹胸57.5kg×12+55kg×12×3；上斜哑铃17.5kg×12×2；侧平举7.5kg×12×3+5kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-18",
+  "sport": "跑步",
+  "duration": "30",
+  "project": "5公里"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-11",
+  "sport": "健身",
+  "parts": [
+   "背",
+   "肩"
+  ],
+  "project": "引体向上15kg×12×2+17.5kg×12+20kg×12；上拉划船30kg×12×3+双臂20kg×12；高位下拉45kg×12×2+40kg×12；哑铃划船17.5kg×12×2；侧平举5kg×12+7.5kg×10×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-11",
+  "sport": "跑步",
+  "duration": "21",
+  "project": "3.54公里"
+ },
+ {
+  "module": "sport",
+  "time": "2025-03-05",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "卧推50kg×12+60kg×12+70kg×12+70kg×9；夹胸55kg×12+57kg×12×3；上斜17.5kg×12×4；侧平举7.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-25",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上12.5kg×12+15kg×12+17.5kg×12+20kg×12；上拉划船30kg×12×4；高位下拉45kg×12；杠铃划船50kg×8+40kg×12；哑铃单臂划船15kg×12×2+17.5kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-25",
+  "sport": "跑步",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-24",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "卧推50kg×12+60kg×12+70kg×10+80kg×6；夹胸52.5kg×12+55kg×12+57.5kg×12×2；哑铃上斜17.5kg×4；哑铃侧平举7.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-20",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上0kg×4×4；机械单臂划船30kg×12×4；高位下拉(单边)35kg×12×2；高位下拉50kg×12×2；坐姿划船95kg×12×2+87.5kg×12"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-20",
+  "sport": "跑步",
+  "duration": "30",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-16",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推50kg×12+60kg×12×2+70kg×12+80kg×5；龙门架上27.5kg×12×3+35kg×12；龙门架中27.5kg×12×3；哑铃上斜15kg×12+17.5kg×12×3"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-16",
+  "sport": "跑步",
+  "duration": "30",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-12",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上12.5kg×8×4；机械单臂划船30kg×12×4；坐姿划船95kg×12+102.5kg×12+95kg×12×2；高位下拉45kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-10",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推40kg×12+50kg×12+60kg×12+60kg×8；史密斯卧推70kg×2；夹胸52.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-02-10",
+  "sport": "跑步",
+  "duration": "30",
+  "project": "5km"
+ },
+ {
+  "module": "sport",
+  "time": "2025-01-19",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上12.5kg×10×2+15kg×10×2；机械单臂划船30kg×12×4；高位下拉50kg×10+45kg×12×3；坐姿划船95kg×12×4；铁杆直臂下拉50kg×12+57.5kg×10+50kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2025-01-15",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "自由卧推40kg×12+60kg×12+60kg×10×3；夹胸52.5kg×12×4；龙门架单35kg×12×3+42.5kg×12；杠铃上斜40kg×5+40kg×10×2；龙门架双上27.5kg×12×2；中27.5kg×5"
+ },
+ {
+  "module": "sport",
+  "time": "2025-01-06",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "自由卧推40kg×12+60kg×10×3；史密斯70kg×2；夹胸50kg×12×2+52.5kg×12×3；单手龙门架夹胸27.5kg×12+35kg×12；双手龙门架上27.5kg×12/中27.5kg×12/下27.5kg×12；上斜哑铃15kg×10×4；肩:哑铃侧平举7.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2025-01-06",
+  "sport": "跑步",
+  "duration": "15"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-24",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "自由卧推50kg×12+60kg×10×3+史密斯70kg×4×2；夹胸47.5kg×12+50kg×12×3；哑铃上斜15kg×12+17.5kg×10×3；龙门架夹胸上27.5kg×12×3/中20kg×12×2/下20kg×12×2"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-20",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上15kg×10+20kg×10×2+25kg×10×2；器械单臂划船30kg×12×4；高位下拉50kg×12×4；坐姿划船80kg×12×4；铁杆直臂下压42.5kg×12×4"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-17",
+  "sport": "健身",
+  "parts": [
+   "胸",
+   "肩"
+  ],
+  "project": "卧推40kg×12+50kg×12+60kg×8+70kg×4；夹胸45kg×12+47.5kg×12×3；杠铃上斜50kg×4+40kg×8×2；哑铃上斜15kg×10×3+17.5kg×8(辅助)；龙门架夹胸单侧上27.5kg×12×3/双中20kg×12×3/双下27.5kg×8+20kg×8×2；肩:哑铃侧平举5kg×10+7.5kg×10×3"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-17",
+  "sport": "跑步",
+  "project": "5公里"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-12",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "引体向上-15kg×10×3；器械单臂划船30kg×12×4；高位下拉50kg×12×4；坐姿划船80kg×12+87.5kg×12×3；铁杆直臂下压42.5kg×12+50kg×12×3"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-12",
+  "sport": "跑步",
+  "duration": "30"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-10",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "推胸机(两侧各)20kg×10+35kg×9+30kg×10+30kg×6；龙门架上20kg×12+27.5kg×12×3/中27.5kg×12×3/下20kg×12×3；史密斯50kg×8×3；夹胸47.5kg×10+45kg×10×2+42.5kg×10"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-10",
+  "sport": "跑步",
+  "duration": "23"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-16",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推60kg；夹胸36kg"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-24",
+  "sport": "健身",
+  "parts": [
+   "腿"
+  ],
+  "project": "深蹲60kg；坐姿腿屈伸60磅；臀推40kg；健步走(一边)10kg"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-25",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推40kg×1+60kg×4；夹胸42.5kg×4；上斜50kg×4；龙门架夹胸7.5×3+10×1"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-29",
+  "sport": "健身",
+  "parts": [
+   "背"
+  ],
+  "project": "低位划船35kg×4；引体向上-35×4；坐姿划船35kg×4；直臂下压17.5×4；坐姿划船41.25×4"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-31",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推50kg×1+60kg×4+70kg×1；夹胸42.5×1+46.25×4；上斜哑铃15×4"
+ },
+ {
+  "module": "sport",
+  "time": "2024-10-31",
+  "sport": "游泳",
+  "project": "（未记录时长）"
+ },
+ {
+  "module": "sport",
+  "time": "2024-11-09",
+  "sport": "游泳",
+  "duration": "45"
+ },
+ {
+  "module": "sport",
+  "time": "2024-11-16",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推50kg×12+60kg×8×3；夹胸42.5×2+46.25×2+50；上斜30kg+50kg；龙门架俯身下胸10×10×2+向前全胸10×10×2"
+ },
+ {
+  "module": "sport",
+  "time": "2024-11-16",
+  "sport": "游泳",
+  "duration": "30"
+ },
+ {
+  "module": "sport",
+  "time": "2024-11-26",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推50kg+60kg×10×2+60kg×8×2；夹胸42.5kg×10×4；上斜50kg×8×4；卷腹57.5×12×2；夹胸46.25×10×2+10×2"
+ },
+ {
+  "module": "sport",
+  "time": "2024-11-26",
+  "sport": "游泳",
+  "duration": "30"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-03",
+  "sport": "健身",
+  "parts": [
+   "胸"
+  ],
+  "project": "卧推(史密斯)50kg+60kg×12×3+70kg×6；夹胸42.5×12+45×12×3+47.5×10；上斜哑铃15kg×8×2；龙门架夹胸上20kg×12×2/中20kg×12×2/下20kg×8×2"
+ },
+ {
+  "module": "sport",
+  "time": "2024-12-03",
+  "sport": "跑步",
+  "duration": "30"
+ },
+ {
+  "id": "house-01",
+  "module": "house",
+  "v": 2,
+  "seq": 1,
+  "time": "",
+  "community": "万家花城二期",
+  "district": "申花",
+  "metro": "5号线萍水街221米",
+  "propType": "商品房",
+  "year": 2009,
+  "school": "大关申花",
+  "area": 89,
+  "totalPrice": 360,
+  "unitPrice": 48459,
+  "downPay": 69,
+  "remark": "性价比、户型小"
+ },
+ {
+  "id": "house-02",
+  "module": "house",
+  "v": 2,
+  "seq": 2,
+  "time": "",
+  "community": "万家花城一期",
+  "district": "申花",
+  "metro": "5号线萍水街107米",
+  "propType": "商品房",
+  "year": 2008,
+  "school": "大关申花",
+  "area": 88,
+  "totalPrice": 338,
+  "unitPrice": 49317,
+  "downPay": 65,
+  "remark": ""
+ },
+ {
+  "id": "house-03",
+  "module": "house",
+  "v": 2,
+  "seq": 3,
+  "time": "",
+  "community": "昆仑橡树园",
+  "district": "申花",
+  "metro": "5号线萍水街318米",
+  "propType": "商品房",
+  "year": 2009,
+  "school": "大关申花",
+  "area": 85,
+  "totalPrice": 380,
+  "unitPrice": 49796,
+  "downPay": 73,
+  "remark": ""
+ },
+ {
+  "id": "house-04",
+  "module": "house",
+  "v": 2,
+  "seq": 4,
+  "time": "",
+  "community": "芳满庭",
+  "district": "申花",
+  "metro": "5号线萍水街935米",
+  "propType": "商品房",
+  "year": 2009,
+  "school": "文津小学、文晖中学",
+  "area": 89,
+  "totalPrice": 320,
+  "unitPrice": 44243,
+  "downPay": 62,
+  "remark": ""
+ },
+ {
+  "id": "house-05",
+  "module": "house",
+  "v": 2,
+  "seq": 5,
+  "time": "",
+  "community": "东方府邸",
+  "district": "申花",
+  "metro": "5号线萍水街478米",
+  "propType": "商品房",
+  "year": 2014,
+  "school": "大关申花华师大",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 62927,
+  "downPay": null,
+  "remark": "高品质、总价高"
+ },
+ {
+  "id": "house-06",
+  "module": "house",
+  "v": 2,
+  "seq": 6,
+  "time": "",
+  "community": "金茂悦",
+  "district": "申花",
+  "metro": "5号线萍水街478米",
+  "propType": "商品房",
+  "year": 2016,
+  "school": "文晖实验",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 54162,
+  "downPay": null,
+  "remark": "高品质"
+ },
+ {
+  "id": "house-07",
+  "module": "house",
+  "v": 2,
+  "seq": 7,
+  "time": "",
+  "community": "上尚庭",
+  "district": "申花",
+  "metro": "5号线萍水街268米",
+  "propType": "商品房",
+  "year": 2013,
+  "school": "育才登云",
+  "area": 81,
+  "totalPrice": 370,
+  "unitPrice": 58660,
+  "downPay": 71,
+  "remark": ""
+ },
+ {
+  "id": "house-08",
+  "module": "house",
+  "v": 2,
+  "seq": 8,
+  "time": "",
+  "community": "西铭苑",
+  "district": "申花",
+  "metro": "5号线萍水街541米",
+  "propType": "已购公房",
+  "year": null,
+  "school": "文津",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 38981,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-09",
+  "module": "house",
+  "v": 2,
+  "seq": 9,
+  "time": "",
+  "community": "莱德绅华府",
+  "district": "申花",
+  "metro": "5号线萍水街381米",
+  "propType": "商品房",
+  "year": 2014,
+  "school": "育才登云",
+  "area": 87,
+  "totalPrice": 420,
+  "unitPrice": 58085,
+  "downPay": 81,
+  "remark": "绿城物业+性价比"
+ },
+ {
+  "id": "house-10",
+  "module": "house",
+  "v": 2,
+  "seq": 10,
+  "time": "",
+  "community": "孔雀蓝轩（学院府）",
+  "district": "申花",
+  "metro": "10号线花园岗路395米",
+  "propType": "商品房",
+  "year": 2017,
+  "school": "华师",
+  "area": 89,
+  "totalPrice": 430,
+  "unitPrice": 56459,
+  "downPay": 83,
+  "remark": ""
+ },
+ {
+  "id": "house-11",
+  "module": "house",
+  "v": 2,
+  "seq": 11,
+  "time": "",
+  "community": "孔雀蓝郡（蓝孔雀）",
+  "district": "申花",
+  "metro": "10号线花园岗路417米",
+  "propType": "商品房",
+  "year": 2017,
+  "school": "华师",
+  "area": 89,
+  "totalPrice": 420,
+  "unitPrice": 54647,
+  "downPay": 81,
+  "remark": "7栋；带院子"
+ },
+ {
+  "id": "house-12",
+  "module": "house",
+  "v": 2,
+  "seq": 12,
+  "time": "",
+  "community": "雍容华庭",
+  "district": "申花",
+  "metro": "10号线花园岗路723米",
+  "propType": "商品房",
+  "year": 2017,
+  "school": "华师",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 46186,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-13",
+  "module": "house",
+  "v": 2,
+  "seq": 13,
+  "time": "",
+  "community": "雍景湾",
+  "district": "申花",
+  "metro": "10号线花园岗路729米",
+  "propType": "已购公房",
+  "year": 2017,
+  "school": "华师",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 46516,
+  "downPay": null,
+  "remark": "性价比"
+ },
+ {
+  "id": "house-14",
+  "module": "house",
+  "v": 2,
+  "seq": 14,
+  "time": "",
+  "community": "金地繁华里",
+  "district": "申花",
+  "metro": "10号线渡架桥1.1公里",
+  "propType": "商品房",
+  "year": 2017,
+  "school": "大关、永正实验中学",
+  "area": 89,
+  "totalPrice": 310,
+  "unitPrice": 40893,
+  "downPay": 60,
+  "remark": "只有2排，一排靠高架、一排靠马路"
+ },
+ {
+  "id": "house-15",
+  "module": "house",
+  "v": 2,
+  "seq": 15,
+  "time": "",
+  "community": "景瑞申花郡",
+  "district": "申花",
+  "metro": "2号线三墩835米",
+  "propType": "商品房",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 40892,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-16",
+  "module": "house",
+  "v": 2,
+  "seq": 16,
+  "time": "",
+  "community": "天阳美林湾",
+  "district": "申花",
+  "metro": "2号线三墩556米",
+  "propType": "商品房",
+  "year": 2008,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 33489,
+  "downPay": null,
+  "remark": "三墩申花交界很老旧"
+ },
+ {
+  "id": "house-17",
+  "module": "house",
+  "v": 2,
+  "seq": 17,
+  "time": "",
+  "community": "上郡",
+  "district": "申花",
+  "metro": "5号线三坝541米",
+  "propType": "商品房",
+  "year": 2010,
+  "school": "政苑小学、紫金港中学",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 46773,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-18",
+  "module": "house",
+  "v": 2,
+  "seq": 18,
+  "time": "",
+  "community": "国风美域",
+  "district": "西湖申花",
+  "metro": "2号线三墩272米",
+  "propType": "商品房",
+  "year": 2017,
+  "school": "三墩小学中学",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 38200,
+  "downPay": null,
+  "remark": "直有一排、入住率80%"
+ },
+ {
+  "id": "house-19",
+  "module": "house",
+  "v": 2,
+  "seq": 19,
+  "time": "",
+  "community": "中旅紫金名门",
+  "district": "西湖申花",
+  "metro": "2号线三墩756米",
+  "propType": "商品房",
+  "year": 2016,
+  "school": "三墩小学中学",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 41405,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-20",
+  "module": "house",
+  "v": 2,
+  "seq": 20,
+  "time": "",
+  "community": "望林府",
+  "district": "拱墅万达",
+  "metro": "10号线渡驾桥589米",
+  "propType": "商品房",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 47929,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-21",
+  "module": "house",
+  "v": 2,
+  "seq": 21,
+  "time": "",
+  "community": "华盛达阅城",
+  "district": "拱墅万达",
+  "metro": "10号线祥圆路491米",
+  "propType": "商品房",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 42259,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-22",
+  "module": "house",
+  "v": 2,
+  "seq": 22,
+  "time": "",
+  "community": "中城汇",
+  "district": "拱墅万达",
+  "metro": "10号线渡驾桥119米",
+  "propType": "经济适用房",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 51130,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-23",
+  "module": "house",
+  "v": 2,
+  "seq": 23,
+  "time": "",
+  "community": "吉祥半岛",
+  "district": "桥西",
+  "metro": "5号线大运河575米",
+  "propType": "商品房",
+  "year": null,
+  "school": "文澜",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 59215,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-24",
+  "module": "house",
+  "v": 2,
+  "seq": 24,
+  "time": "",
+  "community": "风景大院",
+  "district": "桥西",
+  "metro": "5号线大运河249米",
+  "propType": "商品房",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 51540,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-25",
+  "module": "house",
+  "v": 2,
+  "seq": 25,
+  "time": "",
+  "community": "亲亲家园4期",
+  "district": "三墩",
+  "metro": "2号线墩祥站221米",
+  "propType": "商品房",
+  "year": 2008,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": 29612,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-26",
+  "module": "house",
+  "v": 2,
+  "seq": 26,
+  "time": "",
+  "community": "西溪公馆",
+  "district": "",
+  "metro": "",
+  "propType": "",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": null,
+  "downPay": null,
+  "remark": "投资客、群租、烂尾"
+ },
+ {
+  "id": "house-27",
+  "module": "house",
+  "v": 2,
+  "seq": 27,
+  "time": "",
+  "community": "万象城幸福里",
+  "district": "",
+  "metro": "",
+  "propType": "",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": null,
+  "downPay": null,
+  "remark": ""
+ },
+ {
+  "id": "house-28",
+  "module": "house",
+  "v": 2,
+  "seq": 28,
+  "time": "",
+  "community": "彩虹轩",
+  "district": "",
+  "metro": "",
+  "propType": "",
+  "year": null,
+  "school": "",
+  "area": null,
+  "totalPrice": null,
+  "unitPrice": null,
+  "downPay": null,
+  "remark": ""
+ }
+]
+</script>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1>我的日常记录</h1>
+      <span class="sub" id="totalCount">共 0 条</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="tools">
+      <span id="cloudStatus" title="云同步状态" style="display:inline-flex;align-items:center;font-size:12px;font-weight:700;color:#7a8194;margin-right:4px">● 本地模式</span>
+      <button class="btn ghost" id="btnImport">导入 JSON</button>
+      <button class="btn" id="btnExport">导出备份</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+
+    <!-- 1. 运动统计 -->
+    <section class="card wide" data-m="sportstats">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#128200;</div>
+        <div class="card-title">运动统计</div>
+      </div>
+      <div class="card-body">
+        <div class="stats-2col">
+          <!-- 左：运动日历（与卡路里融合，切按天/周/月仍始终展示日历） -->
+          <div class="stpanel">
+            <div class="stpanel-head">
+              <span class="stpanel-title">运动日历</span>
+              <div class="pill-group stats-range" data-pill="statsRange">
+                <span class="pill on" data-val="day">按天</span>
+                <span class="pill" data-val="week">按周</span>
+                <span class="pill" data-val="month">按月</span>
+              </div>
+            </div>
+            <div data-stats-cal></div>
+            <div class="st-weight" style="margin-top:8px">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
+          </div>
+          <!-- 右：运动趋势柱状图 -->
+          <div class="stpanel st-chart">
+            <div class="stpanel-head"><span class="stpanel-title">运动趋势</span></div>
+            <div class="chart-ctrls">
+              <div class="pill-group" data-pill="chartUnit">
+                <span class="pill on" data-val="km">公里</span>
+                <span class="pill" data-val="kcal">卡路里</span>
+              </div>
+              <div class="pill-group" data-pill="chartProj">
+                <span class="pill on" data-val="all">全部</span>
+                <span class="pill" data-val="跑步">跑步</span>
+                <span class="pill" data-val="游泳">游泳</span>
+                <span class="pill" data-val="爬山">爬山</span>
+                <span class="pill" data-val="骑车">骑车</span>
+                <span class="pill" data-val="力量">力量</span>
+              </div>
+            </div>
+            <div data-stats-chart></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1a. 力量训练 -->
+    <section class="card" data-m="strength">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#128170;</div>
+        <div class="card-title">力量训练<span class="cnt" id="cnt-strength">0</span></div>
+        <div class="spacer"></div>
+        <div class="htable-tools">
+          <input class="search" data-search="strength" placeholder="搜索动作 / 部位…" style="width:130px">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="filter-bar" data-filter="strength">
+          <span class="fl-label">部位</span>
+          <span class="fchip on" data-pf="">全部</span>
+          <span class="fchip" data-p="胸" data-pf="胸">胸</span>
+          <span class="fchip" data-p="背" data-pf="背">背</span>
+          <span class="fchip" data-p="肩" data-pf="肩">肩</span>
+          <span class="fchip" data-p="腿" data-pf="腿">腿</span>
+        </div>
+        <div class="htable-wrap">
+          <table class="htable auto strength">
+            <thead>
+              <tr>
+                <th style="width:92px">时间</th>
+                <th style="width:96px">部位</th>
+                <th style="width:220px">项目</th>
+                <th style="width:54px">重量(kg)</th>
+                <th style="width:60px">每组个数</th>
+                <th style="width:42px">组数</th>
+                <th style="width:88px">消耗</th>
+                <th style="width:52px">操作</th>
+              </tr>
+            </thead>
+            <tbody data-strength-body></tbody>
+          </table>
+        </div>
+        <button type="button" class="sheet-add" data-add-strength>添加 +</button>
+      </div>
+    </section>
+
+    <!-- 1b. 有氧训练 -->
+    <section class="card" data-m="cardio">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#127939;</div>
+        <div class="card-title">有氧训练<span class="cnt" id="cnt-cardio">0</span></div>
+        <div class="spacer"></div>
+        <div class="htable-tools">
+          <input class="search" data-search="cardio" placeholder="搜索类型 / 内容…" style="width:130px">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="filter-bar" data-filter="cardio">
+          <span class="fl-label">类型</span>
+          <span class="fchip on" data-cff="">全部</span>
+          <span class="fchip" data-cff="游泳">游泳</span>
+          <span class="fchip" data-cff="跑步">跑步</span>
+          <span class="fchip" data-cff="骑行">骑行</span>
+          <span class="fchip" data-cff="爬山">爬山</span>
+          <span class="fchip" data-cff="其他">其他</span>
+        </div>
+        <div class="htable-wrap">
+          <table class="htable auto cardio">
+            <thead>
+              <tr>
+                <th style="width:112px">时间</th>
+                <th style="width:64px">类型</th>
+                <th style="width:60px">时长</th>
+                <th style="width:78px">距离</th>
+                <th style="width:104px">平均配速</th>
+                <th style="width:62px">消耗</th>
+                <th style="width:52px">操作</th>
+              </tr>
+            </thead>
+            <tbody data-cardio-body></tbody>
+          </table>
+        </div>
+        <button type="button" class="sheet-add" data-add-cardio>添加 +</button>
+      </div>
+    </section>
+
+    <!-- 2. 碎片思考 -->
+    <section class="card wide" data-m="thought">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#128173;</div>
+        <div class="card-title">碎片思考<span class="cnt" id="cnt-thought">0</span></div>
+        <div class="spacer"></div>
+        <div class="htable-tools">
+          <input class="search" data-search="thought" placeholder="搜索思考内容…" style="width:220px">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="htable-wrap">
+          <table class="htable auto">
+            <thead>
+              <tr>
+                <th style="width:150px">时间</th>
+                <th>内容</th>
+              </tr>
+            </thead>
+            <tbody data-sheet-body="thought"></tbody>
+          </table>
+        </div>
+        <button type="button" class="sheet-add" data-add-sheet="thought">添加 +</button>
+        <div class="hint" style="margin-top:8px">点「添加 +」新增，或直接在最下方浅蓝空行填写；单元格失焦即自动保存并同步云端；鼠标移到某行、点「时间」格右侧的 × 删除。</div>
+      </div>
+    </section>
+
+    <!-- 4. 读书 -->
+    <section class="card wide" data-m="book">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#128214;</div>
+        <div class="card-title">读书<span class="cnt" id="cnt-book">0</span></div>
+        <div class="spacer"></div>
+        <div class="htable-tools">
+          <input class="search" data-search="book" placeholder="搜索书名 / 心得…" style="width:220px">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="htable-wrap">
+          <table class="htable auto">
+            <thead>
+              <tr>
+                <th style="width:150px">时间</th>
+                <th style="width:220px">书名（含作者）</th>
+                <th style="width:70px">起页</th>
+                <th style="width:70px">止页</th>
+                <th style="width:60px">本次页数</th>
+                <th>心得</th>
+              </tr>
+            </thead>
+            <tbody data-sheet-body="book"></tbody>
+          </table>
+        </div>
+        <button type="button" class="sheet-add" data-add-sheet="book">添加 +</button>
+        <div class="hint" style="margin-top:8px">点「添加 +」新增，或填最下空行即新增；「本次页数」由起页/止页自动算；失焦自动保存并同步。</div>
+      </div>
+    </section>
+
+    <!-- 5. 看房记录 -->
+    <section class="card wide" data-m="house">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#127968;</div>
+        <div class="card-title">看房记录<span class="cnt" id="cnt-house">0</span></div>
+        <div class="spacer"></div>
+        <div class="htable-tools">
+          <input class="search" data-search="house" placeholder="搜索小区 / 区域 / 学区 / 备注…" style="width:220px">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="htable-wrap">
+          <table class="htable">
+            <thead>
+              <tr>
+                <th>看房时间</th>
+                <th>区域</th>
+                <th>位置 / 地铁</th>
+                <th class="col-comm">小区名</th>
+                <th>类型</th>
+                <th>年份</th>
+                <th>学区</th>
+                <th>面积㎡</th>
+                <th>总价(万)</th>
+                <th>单价(元/㎡)</th>
+                <th>首付(万)</th>
+                <th>备注</th>
+                <th>图片</th>
+              </tr>
+            </thead>
+            <tbody data-sheet-body="house"></tbody>
+          </table>
+        </div>
+        <button type="button" class="sheet-add" data-add-sheet="house">添加 +</button>
+      </div>
+    </section>
+
+
+  </div>
+</div>
+
+<div class="footer">数据实时同步到云端（Supabase），本地同时留一份缓存做离线兜底：断网也能记录，联网后自动补同步。仍建议偶尔「导出备份」为 JSON 存档。</div>
+
+<!-- Import modal -->
+<div class="modal-back" id="importModal">
+  <div class="modal">
+    <h3>导入 JSON</h3>
+    <div class="modal-body">
+      <div class="hint">粘贴一段 JSON（数组或 {records:[...]} 备份文件均可）。导入时会自动校验字段、跳过非法项，并按内容去重，不会产生重复记录。</div>
+      <textarea id="importText" placeholder='[{"module":"thought","time":"2026-07-19 09:30","content":"..."}]'></textarea>
+      <div class="hint" id="importFileHint">或选择备份文件：<input type="file" id="importFile" accept=".json,application/json"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-close-modal>取消</button>
+      <button class="btn primary" id="doImport">校验并导入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Supabase JS SDK (云同步)；jsdelivr 优先，失败自动回退 unpkg -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');}</script>
+
+<!-- 运动记录解析器：把 "卧推60kg×12+70kg×10×2；夹胸55kg×12×4" 之类简写解析成结构化的动作/组明细 -->
+<script>
+(function(root){
+  function toHalf(s){ return String(s==null?"":s); }
+  function parseSetToken(tok, pos){
+    tok = toHalf(tok).trim();
+    if(!tok) return null;
+    var m = tok.match(/^(-?\d+(?:\.\d+)?)\s*(kg|千克|公斤|磅|lb)?\s*(?:[×xX*]\s*(\d+(?:\.\d+)?))?\s*(?:[×xX*]\s*(\d+))?/);
+    if(!m) return { pos:pos||"", extra:tok };
+    var hasUnit = !!m[2];
+    var hasReps = m[3]!=null;
+    var w = parseFloat(m[1]);
+    var unit = (m[2]==="磅"||m[2]==="lb") ? "磅" : "kg";
+    var r = hasReps ? parseFloat(m[3]) : null;
+    var n = m[4]!=null ? parseInt(m[4],10) : 1;
+    var leftover = tok.slice(m[0].length).trim();
+    if(!hasUnit && !hasReps){
+      return { w:null, unit:"", r:w, n:n, pos:pos||"", extra:leftover };
+    }
+    return { w:w, unit:unit, r:r, n:n, pos:pos||"", extra:leftover };
+  }
+  function parseSets(body){
+    body = toHalf(body).trim();
+    var sets = [];
+    if(!body) return sets;
+    body.split(/\+/).forEach(function(p){
+      p.split(/\//).forEach(function(sub){
+        sub = sub.trim(); if(!sub) return;
+        var sm = sub.match(/^([^\-0-9]*?)(-?\d.*)$/);
+        var pos="", token=sub;
+        if(sm){ pos = sm[1].trim(); token = sm[2].trim(); }
+        var st = parseSetToken(token, pos);
+        if(st) sets.push(st);
+        else if(sub) sets.push({ pos:"", extra:sub });
+      });
+    });
+    return sets;
+  }
+  function parseOneExercise(seg){
+    seg = toHalf(seg).trim();
+    if(!seg) return null;
+    var mm = seg.match(/^(.*?)(-?\d.*)$/);
+    var name, body;
+    if(mm){ name = mm[1].trim(); body = mm[2].trim(); }
+    else  { name = seg; body = ""; }
+    name = name.replace(/[:：]\s*$/,"").trim();
+    return { name:name, sets:parseSets(body) };
+  }
+  function parseExercises(str){
+    str = toHalf(str).trim();
+    if(!str) return [];
+    var out = [];
+    str.split(/[；;]+/).forEach(function(seg){
+      seg = seg.trim(); if(!seg) return;
+      var ex = parseOneExercise(seg);
+      if(ex) out.push(ex);
+    });
+    return out;
+  }
+  function setStr(s){
+    if(s.extra && s.w==null && s.r==null) return (s.pos?s.pos:"")+s.extra;
+    var out = s.pos ? s.pos : "";
+    if(s.w==null){ out += (s.r!=null ? s.r+"次" : ""); }
+    else{ out += s.w + (s.unit||"kg"); if(s.r!=null) out += "×"+s.r; }
+    if(s.n && s.n>1) out += "×"+s.n;
+    if(s.extra) out += s.extra;
+    return out;
+  }
+  function serializeExercise(ex){
+    if(!ex.sets || !ex.sets.length) return ex.name||"";
+    return (ex.name?ex.name:"") + " " + ex.sets.map(setStr).join("+");
+  }
+  function serializeExercises(list){ return (list||[]).map(serializeExercise).join("；"); }
+  function exSummary(list){
+    var moves=0, totalSets=0, volume=0, hasVol=false, totalReps=0;
+    (list||[]).forEach(function(ex){
+      if(!ex.sets) return;
+      var counted=false;
+      ex.sets.forEach(function(s){
+        var n = s.n||1;
+        if(s.w!=null || s.r!=null){ totalSets += n; counted=true; }
+        if(s.w!=null && s.w>0 && s.r!=null){ volume += s.w*s.r*n; hasVol=true; }
+        if(s.r!=null) totalReps += s.r*n;
+      });
+      if(counted || ex.name) moves++;
+    });
+    return { moves:moves, totalSets:totalSets, volume:hasVol?Math.round(volume):null, totalReps:totalReps };
+  }
+  function parseCardio(sport, project, durationHint){
+    var res = { distance:null, unit:"", duration:"", note:"" };
+    var p = toHalf(project).trim();
+    if(!p){ return res; }
+    var mk = p.match(/(\d+(?:\.\d+)?)\s*\+?\s*圈/);
+    if(mk){ res.distance=parseFloat(mk[1]); res.unit="圈"; }
+    var mm = p.match(/(\d+(?:\.\d+)?)\s*(?:km|公里|千米|KM|Km)/);
+    if(mm){ res.distance=parseFloat(mm[1]); res.unit="km"; }
+    var mh = p.match(/(\d+(?:\.\d+)?)\s*小时/);
+    var mn = p.match(/(\d+(?:\.\d+)?)\s*分钟/);
+    if(mh){ res.duration = String(parseFloat(mh[1])*60); }
+    else if(mn){ res.duration = String(parseFloat(mn[1])); }
+    var note = p
+      .replace(/\d+(?:\.\d+)?\s*\+?\s*圈/g,"")
+      .replace(/\d+(?:\.\d+)?\s*(?:km|公里|千米|KM|Km)/g,"")
+      .replace(/\d+(?:\.\d+)?\s*小时/g,"")
+      .replace(/\d+(?:\.\d+)?\s*分钟/g,"")
+      .replace(/[（(]\s*[)）]/g,"")
+      .replace(/约|大约|左右/g,"")
+      .replace(/[+·]/g,"")
+      .trim();
+    note = note.replace(/^[（(]+|[)）]+$/g,"").trim();
+    if(note && /[\u4e00-\u9fa5A-Za-z]{2,}|户外|爬山/.test(note)) res.note = note;
+    return res;
+  }
+  root.WorkoutParse = { parseSetToken:parseSetToken, parseSets:parseSets, parseOneExercise:parseOneExercise,
+    parseExercises:parseExercises, setStr:setStr, serializeExercise:serializeExercise,
+    serializeExercises:serializeExercises, exSummary:exSummary, parseCardio:parseCardio };
+})(window);
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORE_KEY = "daily-records-v1";
+  var MODULES = ["thought","sport","book","house"];
+  var SPORTS = ["游泳","跑步","骑行","爬山","健身","其他"];
+  var CARDIO = ["游泳","跑步","骑行"];
+  var WP = window.WorkoutParse;
+
+  // ============================================================
+  //  Supabase 云同步配置 —— 只需改这两行
+  //  1) 在 supabase.com 建项目，Project Settings ▸ API 里复制
+  //  2) URL 形如 https://xxxx.supabase.co ；anon key 是那串很长的 public key
+  //  留着占位符不改也没关系：页面会自动退回「本地模式」，功能不受影响。
+  // ============================================================
+  var SUPABASE_URL      = "https://gwerzaaishbvtaxhwezv.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_mlvyWH8gGyPjwvFgVbhRjA__HE3yrwr";
+
+  // ---------- state ----------
+  var DEFAULT_PROFILE = { weightKg: 80, heightCm: 180, sex: "male" };
+  var state = { records: [], seenSeedIds: [], pendingOps: [], profile: { weightKg: 80, heightCm: 180, sex: "male" } };
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        var p = JSON.parse(raw);
+        state.records = Array.isArray(p.records) ? p.records : [];
+        state.seenSeedIds = Array.isArray(p.seenSeedIds) ? p.seenSeedIds : [];
+        state.pendingOps = Array.isArray(p.pendingOps) ? p.pendingOps : [];
+        if(p.profile && typeof p.profile==="object"){
+          state.profile = {
+            weightKg: num(p.profile.weightKg) || DEFAULT_PROFILE.weightKg,
+            heightCm: num(p.profile.heightCm) || DEFAULT_PROFILE.heightCm,
+            sex: p.profile.sex || DEFAULT_PROFILE.sex
+          };
+        }
+        // migrate legacy sport records -> new structured model
+        state.records.forEach(function(r){ normalizeSportRec(r); });
+      }
+    }catch(e){ console.warn("load failed", e); }
+  }
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch(e){ toast("保存失败："+e.message, true); }
+  }
+
+  // ---------- cloud (Supabase) ----------
+  var SB = null, CLOUD_ON = false;
+
+  function setCloudStatus(s){
+    var el = document.getElementById("cloudStatus");
+    if(!el) return;
+    var map = {
+      local:      ["本地模式",   "#7a8194"],
+      connecting: ["连接云端…",  "#f59e0b"],
+      synced:     ["已云同步",   "#10b981"],
+      offline:    ["离线·待同步","#ef4444"]
+    };
+    var v = map[s] || map.local;
+    el.textContent = "● " + v[0];
+    el.style.color = v[1];
+  }
+
+  function initCloud(){
+    var bad = !SUPABASE_URL || SUPABASE_URL.indexOf("PASTE")>=0 || !/^https:\/\//.test(SUPABASE_URL)
+           || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.indexOf("PASTE")>=0;
+    if(bad || !window.supabase || !window.supabase.createClient){ setCloudStatus("local"); mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800); return; }
+    try{
+      SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      CLOUD_ON = true;
+      setCloudStatus("connecting");
+      cloudBootstrap();
+    }catch(e){ console.warn("cloud init failed", e); CLOUD_ON=false; setCloudStatus("local"); }
+  }
+
+  function rowFromRec(r){ return { id:r.id, module:r.module, time:r.time||"", data:r, updated_at:new Date().toISOString() }; }
+  function recFromRow(row){ var r = row.data || {}; r.id=row.id; r.module=row.module; if(row.time) r.time=row.time; return normalizeSportRec(r); }
+
+  function queueOp(op){
+    var idOf = op.id || (op.rec && op.rec.id);
+    state.pendingOps = (state.pendingOps||[]).filter(function(o){ return (o.id||(o.rec&&o.rec.id))!==idOf; });
+    state.pendingOps.push(op);
+    save();
+  }
+  function cloudUpsert(r){
+    if(!CLOUD_ON){ return; }
+    SB.from("records").upsert(rowFromRec(r)).then(function(res){
+      if(res.error){ console.warn("upsert err", res.error); queueOp({op:"upsert", id:r.id}); setCloudStatus("offline"); }
+      else { setCloudStatus("synced"); }
+    });
+  }
+  function cloudDelete(id){
+    if(!CLOUD_ON){ return; }
+    SB.from("records").delete().eq("id", id).then(function(res){
+      if(res.error){ console.warn("delete err", res.error); queueOp({op:"delete", id:id}); setCloudStatus("offline"); }
+      else { setCloudStatus("synced"); }
+    });
+  }
+  function flushOutbox(){
+    if(!CLOUD_ON || !state.pendingOps || !state.pendingOps.length) return;
+    var ops = state.pendingOps.slice();
+    state.pendingOps = []; save();
+    ops.forEach(function(o){
+      if(o.op==="delete"){ cloudDelete(o.id); }
+      else if(o.op==="upsert"){ var r=state.records.find(function(x){return x.id===o.id;}); if(r) cloudUpsert(r); }
+    });
+  }
+  function cloudBootstrap(){
+    SB.from("records").select("*").then(function(res){
+      if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); setTimeout(autoEstimateAll, 800); return; }
+      var cloudById = {};
+      (res.data||[]).forEach(function(row){ var r=recFromRow(row); cloudById[r.id]=r; });
+      // union：本地为基础，云端覆盖同 id（云端权威），本地独有的先保留稍后上推
+      var localOnly = state.records.filter(function(r){ return !cloudById[r.id]; });
+      var merged = {};
+      state.records.forEach(function(r){ merged[r.id]=r; });
+      Object.keys(cloudById).forEach(function(id){ merged[id]=cloudById[id]; });
+      state.records = Object.keys(merged).map(function(k){ return merged[k]; });
+      var removedDup = reconcile();
+      mergeSeed();          // now safe: dedups against full cloud+local set
+      save(); renderAll(); setCloudStatus("synced");
+      if(removedDup) toast("已合并清理 "+removedDup+" 条重复记录");
+      var aliveIds = {}; state.records.forEach(function(r){ aliveIds[r.id]=true; });
+      localOnly.forEach(function(r){ if(aliveIds[r.id]) cloudUpsert(r); });   // 把本地独有记录推到云端
+      flushOutbox();
+      subscribeRealtime();
+      setTimeout(autoEstimateAll, 800);
+    });
+  }
+  function subscribeRealtime(){
+    if(!CLOUD_ON) return;
+    try{
+      SB.channel("records-sync")
+        .on("postgres_changes", {event:"*", schema:"public", table:"records"}, function(payload){
+          if(payload.eventType==="DELETE"){
+            var did = payload.old && payload.old.id;
+            if(did){ state.records = state.records.filter(function(x){return x.id!==did;}); save(); renderAll(); }
+          }else{
+            var r = recFromRow(payload.new);
+            var i = state.records.findIndex(function(x){return x.id===r.id;});
+            if(i>=0) state.records[i]=r; else state.records.push(r);
+            save(); renderAll();
+          }
+        }).subscribe();
+    }catch(e){ console.warn("realtime failed", e); }
+  }
+  window.addEventListener("online", flushOutbox);
+
+  // ---------- helpers ----------
+  function uid(){ return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  // normalize various time inputs to "YYYY-MM-DDTHH:mm" for storage
+  function normTime(t){
+    if(!t) return "";
+    t = String(t).trim().replace(/\//g,"-");
+    // "YYYY-MM-DD HH:mm" -> "YYYY-MM-DDTHH:mm"
+    if(/^\d{4}-\d{1,2}-\d{1,2}[ T]\d{1,2}:\d{1,2}/.test(t)){
+      t = t.replace(" ","T");
+      var m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2})/);
+      if(m) return m[1]+"-"+pad(m[2])+"-"+pad(m[3])+"T"+pad(m[4])+":"+pad(m[5]);
+    }
+    // date only
+    if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)){
+      var d = t.split("-");
+      return d[0]+"-"+pad(d[1])+"-"+pad(d[2])+"T00:00";
+    }
+    return t;
+  }
+  function pad(n){ n=String(n); return n.length<2 ? "0"+n : n; }
+  function fmtTime(t){
+    if(!t) return "";
+    var m = String(t).replace(" ","T").match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if(!m) return t;
+    var s = m[1]+"-"+m[2]+"-"+m[3];
+    if(m[4]) s += " "+m[4]+":"+m[5];
+    return s;
+  }
+  function nowLocal(){
+    var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+    return d.toISOString().slice(0,16);
+  }
+
+  // ---------- calories (MET method) ----------
+  // kcal = MET × 3.5 × weightKg / 200 × minutes  (ACSM)
+  function runMET(v){ // v = km/h
+    if(!(v>0)) return 8.0;
+    if(v<8)    return 8.0;   // 慢跑
+    if(v<9.7)  return 9.0;   // 6-6 min/km
+    if(v<11.3) return 10.5;
+    if(v<12.9) return 11.5;
+    if(v<14.5) return 12.3;
+    if(v<16.1) return 12.8;
+    return 14.5;
+  }
+  function bikeMET(v){ // v = km/h
+    if(!(v>0)) return 7.5;
+    if(v<16)   return 4.0;
+    if(v<19)   return 6.8;
+    if(v<22)   return 8.0;
+    if(v<25)   return 10.0;
+    if(v<30)   return 12.0;
+    return 15.8;
+  }
+  function sportMET(r){
+    var sp=r.sport, dur=num(r.duration);
+    var kmh = (r.distUnit==="km" && r.distance>0 && dur>0) ? (r.distance/(dur/60)) : 0;
+    if(sp==="跑步") return runMET(kmh || 9.6);         // 默认约 9.6km/h(约6'15"/km)
+    if(sp==="骑行") return bikeMET(kmh || 20);          // 默认约 20km/h
+    if(sp==="游泳") return 8.0;                          // 自由泳中等强度
+    if(sp==="爬山") return 6.0;                          // 中强度徒步/登山
+    if(sp==="健身") return 5.0;                          // 力量训练中高强度
+    return 4.0;                                          // 其他/一般活动
+  }
+  // total number of working sets across a strength session's exercises
+  function totalSets(r){
+    var n=0;
+    (r.exercises||[]).forEach(function(e){
+      var s=(e.sets&&e.sets.length)?e.sets:[{}];
+      s.forEach(function(x){ n += (x.n && x.n>0) ? Math.round(x.n) : 1; });
+    });
+    return n;
+  }
+  // effective minutes for the calorie formula: explicit duration wins; otherwise
+  // estimate — strength ≈ 3 min per working set (floor 12), cardio default 30.
+  function estMinutes(r){
+    var dur=num(r.duration);
+    if(dur!=null && dur>0) return dur;
+    if(r.sport==="健身") return Math.max(12, totalSets(r)*3);
+    return 30;
+  }
+  // pure MET estimate: MET × 3.5 × weightKg / 200 × minutes  (ACSM)
+  function autoCalories(r){
+    if(!r || r.module!=="sport") return 0;
+    var w = (state.profile && num(state.profile.weightKg)) || DEFAULT_PROFILE.weightKg;
+    return Math.round(sportMET(r) * 3.5 * w / 200 * estMinutes(r));
+  }
+  // effective calories: a manual override (r.kcal) always wins, else the estimate.
+  function calcCalories(r){
+    if(!r || r.module!=="sport") return 0;
+    var man = num(r.kcal);
+    if(man!=null && man>0) return Math.round(man);
+    return autoCalories(r);
+  }
+
+  // ---------- AI 卡路里估算 (阿里云百炼 / DashScope, OpenAI 兼容) ----------
+  var AI_KEY = "sk-7a5219ecd8094bbe9bfe8aaebd6ea74f";
+  var AI_ENDPOINT = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+  // build a human-readable description of a strength session for the model
+  function strengthDesc(r){
+    var w = (state.profile && num(state.profile.weightKg)) || DEFAULT_PROFILE.weightKg;
+    var parts = (r.parts||[]).join("、") || "未标注";
+    var lines = (r.exercises||[]).map(function(ex){
+      var sets = (ex.sets&&ex.sets.length)?ex.sets:[{}];
+      var seg = sets.map(function(s){
+        var ww = (s.w!=null&&s.w!=="") ? (s.w+"kg") : "自重";
+        return ww + "×" + (s.r||"?") + "次" + (s.n>1 ? "×"+s.n+"组" : "");
+      }).join("，");
+      return (ex.name||"动作") + " " + seg;
+    }).filter(Boolean);
+    var dur = num(r.duration);
+    return "体重" + w + "公斤，力量训练，训练部位：" + parts + "。"
+      + (dur>0 ? ("时长约"+dur+"分钟。") : "")
+      + "动作明细：" + (lines.join("；") || "无");
+  }
+  // 力量卡路里 AI 静默自动估算 —— 无按钮，boot 后遍历所有缺失 kcal 的力量记录，
+  // 顺序调用（间隔 400ms 避免并发压力），成功后写回 r.kcal + save + cloudUpsert。
+  function aiEstimateSilent(r){
+    if(!r || r.sport!=="健身") return Promise.resolve(false);
+    var prompt = strengthDesc(r)
+      + "\n\n请根据以上力量训练内容，估算这次训练总共消耗的卡路里（千卡）。"
+      + "只返回一个整数，不要任何单位、文字或解释。";
+    return fetch(AI_ENDPOINT, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+AI_KEY },
+      body: JSON.stringify({
+        model:"qwen-turbo",
+        messages:[
+          { role:"system", content:"你是运动生理与卡路里估算专家，只输出一个纯整数。" },
+          { role:"user", content:prompt }
+        ],
+        temperature:0.2
+      })
+    }).then(function(res){
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return res.json();
+    }).then(function(data){
+      var txt = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "";
+      var m = String(txt).match(/\d+(?:\.\d+)?/);
+      var kv = m ? Math.round(parseFloat(m[0])) : null;
+      if(kv==null || !(kv>0)) throw new Error("bad ai response: "+txt);
+      r.kcal = kv; r.updatedAt = Date.now();
+      save(); cloudUpsert(r);
+      // in-place 刷新对应行的 kcal 输入 + 统计
+      var inp = document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
+      if(inp && document.activeElement!==inp) inp.value = kv;
+      return true;
+    }).catch(function(err){ console.warn("[autoEstimate]", r.id, err && err.message); return false; });
+  }
+  var _autoEstimateRunning = false;
+  function autoEstimateAll(){
+    if(_autoEstimateRunning) return;
+    _autoEstimateRunning = true;
+    var todo = state.records.filter(function(r){
+      if(r.module!=="sport" || r.sport!=="健身") return false;
+      if(r.kcal>0) return false;
+      var ex = r.exercises||[];
+      var hasContent = ex.some(function(e){
+        return (e.name||"").trim() || (e.sets||[]).some(function(s){ return s && (s.w!=null || s.r!=null || s.n!=null); });
+      });
+      return hasContent;
+    });
+    if(!todo.length){ _autoEstimateRunning = false; return; }
+    var i = 0, changed = 0;
+    function next(){
+      if(i>=todo.length){
+        _autoEstimateRunning = false;
+        if(changed) { renderStats(); updTotal(); }
+        return;
+      }
+      var r = todo[i++];
+      aiEstimateSilent(r).then(function(ok){ if(ok) changed++; setTimeout(next, 400); });
+    }
+    next();
+  }
+
+
+  // ---------- date period helpers ----------
+  function recDate(r){
+    var m = String(r.time||"").replace(" ","T").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(!m) return null;
+    return new Date(+m[1], +m[2]-1, +m[3]);
+  }
+  function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function mondayOf(d){
+    var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+    var wd=(x.getDay()+6)%7;            // 周一=0
+    x.setDate(x.getDate()-wd);
+    return x;
+  }
+  // period key + label for range = "day"|"week"|"month"
+  function periodKey(d, range){
+    if(range==="week"){ var mo=mondayOf(d); return "W|"+ymd(mo); }
+    if(range==="month") return "M|"+d.getFullYear()+"-"+pad(d.getMonth()+1);
+    return "D|"+ymd(d);
+  }
+  function periodLabel(d, range){
+    if(range==="week"){ var mo=mondayOf(d), su=new Date(mo); su.setDate(mo.getDate()+6);
+      return (mo.getMonth()+1)+"/"+mo.getDate()+"–"+(su.getMonth()+1)+"/"+su.getDate(); }
+    if(range==="month") return d.getFullYear()+"年"+(d.getMonth()+1)+"月";
+    return (d.getMonth()+1)+"月"+d.getDate()+"日";
+  }
+  function inCurrentPeriod(d, range){
+    if(!d) return false;
+    var now=new Date();
+    return periodKey(d,range)===periodKey(now,range);
+  }
+
+  // ---------- validation + signature (for dedup) ----------
+  function normDur(v){
+    if(v===""||v==null) return "";
+    var n=num(v); return String(n==null?v:n);
+  }
+  function normParts(parts, part){
+    var valid=["胸","背","肩","腿"], out=[];
+    var src = Array.isArray(parts) ? parts
+            : (parts!=null && parts!=="") ? String(parts).split(/[,，\s\/、]+/)
+            : (part ? [part] : []);
+    src.forEach(function(p){ p=String(p).trim(); if(valid.indexOf(p)>=0 && out.indexOf(p)<0) out.push(p); });
+    return out;
+  }
+  function cleanExercises(list){
+    return (list||[]).map(function(e){
+      var name = e && e.name!=null ? String(e.name).trim() : "";
+      var sets = (e && Array.isArray(e.sets)) ? e.sets
+               : WP.parseSets(e && (e.setsText!=null?e.setsText:"") );
+      return { name:name, sets:sets };
+    }).filter(function(e){ return e.name || (e.sets && e.sets.length); });
+  }
+  // Build the sport-specific fields onto target `r` from a raw record.
+  function fillSportFields(r, rec){
+    var sp = rec.sport;
+    r.sport = sp;
+    r.duration = normDur(rec.duration);
+    r.note = rec.note ? String(rec.note).trim() : "";
+    r.parts = (sp==="健身") ? normParts(rec.parts, rec.part) : [];
+    r.exercises = []; r.distance = null; r.distUnit = "";
+    if(sp==="健身"){
+      r.exercises = Array.isArray(rec.exercises) ? cleanExercises(rec.exercises)
+                  : WP.parseExercises(rec.project||"");
+      r.raw = (rec.raw!=null?rec.raw:(rec.project!=null?rec.project:WP.serializeExercises(r.exercises))) || "";
+    }else{
+      // cardio + 其他: distance/unit either explicit or parsed from project
+      var dist = (rec.distance!=null && rec.distance!=="") ? num(rec.distance) : null;
+      var unit = rec.distUnit || "";
+      if(dist==null){
+        var c = WP.parseCardio(sp, rec.project||"", r.duration);
+        dist = c.distance; unit = c.unit;
+        if(!r.duration && c.duration) r.duration = c.duration;
+        if(!r.note && c.note) r.note = c.note;
+      }
+      r.distance = dist;
+      if(dist!=null){ r.distUnit = unit || (sp==="游泳"?"圈":"km"); }
+      else{ r.distUnit = unit || ""; }
+      r.raw = rec.raw || "";
+    }
+    var kc = num(rec.kcal);
+    if(kc!=null && kc>0) r.kcal = kc;
+    return r;
+  }
+  // migrate an old-model sport record (has project/sets, no exercises/distance)
+  function migrateSport(r){
+    var tmp = { module:"sport", sport:r.sport, parts:r.parts, part:r.part,
+                duration:r.duration, note:r.note, project:r.project };
+    var out = { module:"sport" };
+    fillSportFields(out, tmp);
+    return { exercises:out.exercises, distance:out.distance, distUnit:out.distUnit,
+             duration:out.duration, note:out.note, raw:out.raw };
+  }
+
+  // Idempotently upgrade a sport record to the structured model. Safe to call on
+  // records that are already structured. Used for BOTH localStorage rows (load)
+  // and cloud rows (recFromRow) — cloud data may still be in the legacy free-text
+  // model (project text, no exercises/distance), which otherwise renders blank.
+  function normalizeSportRec(r){
+    if(!r || r.module!=="sport") return r;
+    if(!Array.isArray(r.parts)){ r.parts = r.part ? [r.part] : []; }
+    delete r.part;
+    var isGym = (r.sport==="健身");
+    var hasStruct = isGym ? Array.isArray(r.exercises)
+                          : (Object.prototype.hasOwnProperty.call(r,"distance") && r.distance!==undefined);
+    if(!hasStruct){
+      var up = migrateSport(r);
+      r.exercises = up.exercises;
+      r.distance  = up.distance;
+      r.distUnit  = up.distUnit;
+      r.raw       = up.raw;
+      if(!r.note && up.note) r.note = up.note;
+      if((r.duration===""||r.duration==null) && up.duration) r.duration = up.duration;
+      if(r.note==null) r.note = "";
+      delete r.sets; delete r.project;
+    }
+    r.parts = isGym ? normParts(r.parts) : [];
+    if(isGym){ r.distance = null; r.distUnit = ""; }
+    else { r.exercises = []; }
+    return r;
+  }
+  function recRichness(r){
+    if(r.module!=="sport") return 0;
+    if(r.sport==="健身") return (r.exercises && r.exercises.length) ? 2 : 0;
+    return (r.distance!=null) ? 2 : 0;
+  }
+  // Collapse records that share an identical content signature (the duplicates
+  // introduced when unmigrated cloud rows and re-imported seed rows coexisted).
+  // Keeps the richest, then the earliest (stable original id); deletes the rest
+  // both locally and from the cloud. Returns the number removed.
+  function dedupeRecords(){
+    var groups = {};
+    state.records.forEach(function(r){ var s=signature(r); (groups[s]=groups[s]||[]).push(r); });
+    var removed = [];
+    Object.keys(groups).forEach(function(s){
+      var g = groups[s];
+      if(g.length<2) return;
+      g.sort(function(a,b){
+        var ra=recRichness(a), rb=recRichness(b);
+        if(ra!==rb) return rb-ra;                    // richer first
+        return (a.createdAt||0)-(b.createdAt||0);    // then older first (stable id)
+      });
+      for(var i=1;i<g.length;i++) removed.push(g[i]);
+    });
+    if(!removed.length) return 0;
+    var rmIds = {}; removed.forEach(function(r){ rmIds[r.id]=true; });
+    state.records = state.records.filter(function(r){ return !rmIds[r.id]; });
+    save();
+    removed.forEach(function(r){ cloudDelete(r.id); });
+    return removed.length;
+  }
+  // A gym record is "empty" when it has no named exercise and no set carrying
+  // a weight or rep count (the blank-ghost shape: raw " " / " ； ", exercises
+  // like [{name:"",sets:[{w:null,r:null}]}]). Such rows carry zero information.
+  function isEmptyGym(r){
+    if(!r || r.module!=="sport" || r.sport!=="健身") return false;
+    var ex = r.exercises || [];
+    for(var i=0;i<ex.length;i++){
+      if((ex[i].name||"").trim()) return false;
+      var sets = ex[i].sets || [];
+      for(var j=0;j<sets.length;j++){
+        if(sets[j].w!=null || sets[j].r!=null) return false;
+      }
+    }
+    var txt = String(r.note||r.raw||"").replace(/[；;\s]/g,"");
+    return !txt;
+  }
+  // Drop blank gym ghosts. Only runs inside reconcile (load / cloud bootstrap),
+  // never while the user is editing, so a freshly-added-but-unfilled session is
+  // kept until the next reload. Removes locally and from the cloud.
+  function pruneEmptyGym(){
+    var dead = state.records.filter(isEmptyGym);
+    if(!dead.length) return 0;
+    var ids = {}; dead.forEach(function(r){ ids[r.id]=true; });
+    state.records = state.records.filter(function(r){ return !ids[r.id]; });
+    save();
+    dead.forEach(function(r){ cloudDelete(r.id); });
+    return dead.length;
+  }
+  // Normalize every record to the current model, then remove duplicates and
+  // blank gym ghosts. Idempotent and self-healing; safe on every load / sync.
+  function reconcile(){
+    state.records.forEach(normalizeSportRec);
+    var n = dedupeRecords();
+    return n + pruneEmptyGym();
+  }
+
+  function validate(rec){
+    if(!rec || MODULES.indexOf(rec.module)<0) return null;
+    var t = normTime(rec.time);
+    if(!t && rec.module!=="house") return null;
+    var r = { module: rec.module, time: t||"" };
+    if(rec.module==="thought"){
+      if(!rec.content) return null;
+      r.content = String(rec.content).trim();
+    }else if(rec.module==="sport"){
+      if(SPORTS.indexOf(rec.sport)<0) return null;
+      fillSportFields(r, rec);
+    }else if(rec.module==="book"){
+      if(!rec.book) return null;
+      var fp=num(rec.fromPage), tp=num(rec.toPage);
+      if(fp==null||tp==null) return null;
+      r.book=String(rec.book).trim(); r.fromPage=fp; r.toPage=tp;
+      r.pagesRead = Math.max(0, tp-fp);
+      r.note = rec.note ? String(rec.note).trim() : "";
+    }else if(rec.module==="house"){
+      if(!rec.community) return null;
+      r.community=String(rec.community).trim();
+      r.district=rec.district?String(rec.district).trim():"";
+      r.metro=rec.metro?String(rec.metro).trim():"";
+      r.propType=rec.propType?String(rec.propType).trim():"";
+      r.year=num(rec.year);
+      r.school=rec.school?String(rec.school).trim():"";
+      r.area=num(rec.area);
+      r.totalPrice=num(rec.totalPrice);
+      r.unitPrice=num(rec.unitPrice);
+      if(r.unitPrice==null && r.area && r.totalPrice) r.unitPrice=Math.round(r.totalPrice*10000/r.area);
+      r.downPay=num(rec.downPay);
+      r.remark=rec.remark?String(rec.remark).trim():"";
+      r.images = Array.isArray(rec.images) ? rec.images.filter(function(s){ return typeof s==="string" && s; }) : [];
+      r.added = !!rec.added;
+      r.v=2;
+      r.seq=num(rec.seq);
+    }
+    return r;
+  }
+  function signature(r){
+    if(r.module==="thought") return "T|"+r.time+"|"+r.content;
+    if(r.module==="sport"){
+      var base = "S|"+r.time+"|"+r.sport+"|"+(r.parts||[]).join(",")+"|"+r.duration;
+      if(r.sport==="健身") base += "|"+WP.serializeExercises(r.exercises||[]);
+      else base += "|"+(r.distance==null?"":(r.distance+(r.distUnit||"")))+"|"+(r.note||"");
+      return base;
+    }
+    if(r.module==="book")    return "B|"+r.time+"|"+r.book+"|"+r.fromPage+"|"+r.toPage;
+    if(r.module==="house")   return "H|"+r.community+"|"+(r.area==null?"":r.area)+"|"+(r.totalPrice==null?"":r.totalPrice)+"|"+(r.unitPrice==null?"":r.unitPrice);
+    return "?";
+  }
+  function existingSignatures(){
+    var set={}; state.records.forEach(function(r){ set[signature(r)]=true; }); return set;
+  }
+
+  // ---------- import (used by manual paste AND seed) ----------
+  // returns {added, skippedDup, invalid}
+  function importRecords(list, opts){
+    opts = opts||{};
+    var sigs = existingSignatures();
+    var added=0, dup=0, invalid=0, addedRecs=[];
+    (list||[]).forEach(function(raw){
+      var r = validate(raw);
+      if(!r){ invalid++; return; }
+      var sig = signature(r);
+      if(sigs[sig]){ dup++; return; }
+      r.id = (raw && raw.id) ? String(raw.id) : uid();
+      r.createdAt = Date.now();
+      state.records.push(r);
+      sigs[sig]=true;
+      addedRecs.push(r);
+      added++;
+    });
+    if(added){ save(); addedRecs.forEach(function(r){ cloudUpsert(r); }); }
+    return {added:added, skippedDup:dup, invalid:invalid};
+  }
+
+  // ---------- seed merge (auto, no user action) ----------
+  function mergeSeed(){
+    var el = document.getElementById("seed-data");
+    if(!el) return;
+    var arr;
+    try{ arr = JSON.parse(el.textContent.trim()||"[]"); }
+    catch(e){ console.warn("seed parse error", e); return; }
+    if(!Array.isArray(arr) || !arr.length) return;
+    var seen = {}; state.seenSeedIds.forEach(function(k){ seen[k]=true; });
+    var fresh = [];
+    arr.forEach(function(raw){
+      var r = validate(raw);
+      if(!r) return;
+      // seed key: explicit id else content signature (stable)
+      var key = (raw && raw.id) ? ("id:"+raw.id) : ("sig:"+signature(r));
+      if(seen[key]) return;              // already imported (or user deleted it) -> skip
+      raw.__seedKey = key;
+      fresh.push(raw);
+      seen[key]=true;
+      state.seenSeedIds.push(key);
+    });
+    if(fresh.length){
+      var res = importRecords(fresh);
+      save();
+      if(res.added) toast("自动导入了 "+res.added+" 条新记录");
+    }else{
+      save(); // persist seenSeedIds even if nothing new
+    }
+  }
+
+  // ---------- rendering ----------
+  var searchTerms = {thought:"",sport:"",book:"",house:"",strength:"",cardio:""};
+
+  function recordsOf(m){
+    return state.records.filter(function(r){return r.module===m;})
+      .sort(function(a,b){ return (b.time||"").localeCompare(a.time||"") || (b.createdAt||0)-(a.createdAt||0); });
+  }
+  function matchSearch(r, term){
+    if(!term) return true;
+    term = term.toLowerCase();
+    var hay = "";
+    if(r.module==="thought") hay = r.content;
+    else if(r.module==="sport") hay = [r.sport,(r.parts||[]).join(" "),(r.exercises||[]).map(function(e){return e.name+" "+(e.sets||[]).map(WP.setStr).join(" ");}).join(" "),r.note,r.distUnit].join(" ");
+    else if(r.module==="book") hay = [r.book,r.note].join(" ");
+    else if(r.module==="house") hay = [r.community,r.district,r.metro,r.propType,r.school,r.remark].join(" ");
+    return String(hay||"").toLowerCase().indexOf(term)>=0;
+  }
+
+  function paceStr(r){
+    if(!r || r.sport!=="跑步" || r.distUnit!=="km") return "";
+    var dist = r.distance, d = num(r.duration);
+    if(!(dist>0) || d==null || d<=0) return "";
+    var sec = d*60/dist, mm = Math.floor(sec/60), ss = Math.round(sec-mm*60);
+    if(ss===60){ mm+=1; ss=0; }
+    return "配速 "+mm+"'"+(ss<10?"0":"")+ss+"\"/km";
+  }
+  // average pace/speed for cardio card (no "配速 " prefix)
+  function cardioPaceStr(r){
+    if(!r) return "";
+    var d = num(r.duration); if(!(d>0)) return "";
+    var km = distanceKm(r); if(!(km>0)) return "";
+    if(r.sport==="跑步"){
+      var sec=d*60/km, mm=Math.floor(sec/60), ss=Math.round(sec-mm*60);
+      if(ss===60){ mm+=1; ss=0; }
+      return mm+"'"+(ss<10?"0":"")+ss+"\"/km";
+    }
+    if(r.sport==="骑行" || r.sport==="爬山"){
+      return (Math.round(km/(d/60)*10)/10)+" km/h";
+    }
+    if(r.sport==="游泳"){
+      var s100=d*60/(km*10), m1=Math.floor(s100/60), s1=Math.round(s100-m1*60);
+      if(s1===60){ m1+=1; s1=0; }
+      return m1+"'"+(s1<10?"0":"")+s1+"\"/100m";
+    }
+    return "";
+  }
+
+  // ---------- 力量训练 (strength) ----------
+  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/其他
+  var PARTS_ALL = ["胸","背","肩","腿"];
+  var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
+  var SPORT_GREEN = "#10b981";
+  // 有氧运动 4 类彩色: 游泳蓝 / 跑步绿 / 骑车橙 / 爬山棕
+  var CARDIO_KINDS = ["游泳","跑步","骑车","爬山","其他"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑车":"#f97316", "爬山":"#78716c", "其他":"#94a3b8" };
+  // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
+  var LAP_KM = 0.05;
+  // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
+  function distanceKm(r){
+    var d=num(r.distance);
+    if(d==null || !(d>0)) return 0;
+    var u=r.distUnit||"";
+    if(u==="km"||u==="公里"||u==="千米") return d;
+    if(u==="m"||u==="米") return d/1000;
+    if(u==="圈") return d * LAP_KM;
+    return 0;
+  }
+  function cardioKind(r){
+    if(!r || r.sport==="健身") return null;
+    var sp=r.sport||"";
+    if(sp==="游泳") return "游泳";
+    if(sp==="跑步") return "跑步";
+    if(sp==="骑行" || sp==="骑车") return "骑车";
+    var txt=(r.note||"")+"|"+(r.raw||"")+"|"+(r.project||"");
+    if(sp==="爬山" || /爬山|登山|徒步|hike/i.test(txt)) return "爬山";
+    return "其他";
+  }
+  var strengthFilter = "";   // 部位筛选（空=全部）
+  var cardioFilter = "";     // 类型筛选（空=全部）
+  function byTimeDesc(a,b){ return (b.time||"").localeCompare(a.time||"") || (b.createdAt||0)-(a.createdAt||0); }
+  function strengthRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport==="健身"; }).sort(byTimeDesc); }
+  function cardioRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport!=="健身"; }).sort(byTimeDesc); }
+  function findSport(id){ return state.records.find(function(x){ return x.id===id && x.module==="sport"; }); }
+  function syncStrengthRaw(r){ r.project = WP.serializeExercises(r.exercises||[]); r.raw = r.project; }
+
+  // flatten a session's exercises into one line per set, keeping (ei,si) addresses
+  function flatLines(r){
+    var out=[];
+    (r.exercises||[]).forEach(function(ex,ei){
+      var sets = (ex.sets && ex.sets.length) ? ex.sets : [{}];
+      sets.forEach(function(s,si){ out.push({ name:ex.name||"", w:s.w, unit:s.unit, r:s.r, n:s.n, ei:ei, si:si }); });
+    });
+    if(!out.length) out.push({ name:"", w:null, unit:"", r:null, n:1, ei:0, si:0 });
+    return out;
+  }
+  function partTagsHTML(r){
+    var sel = (r.parts||[]).filter(function(p){ return PARTS_ALL.indexOf(p)>=0; });
+    var label = sel.length
+      ? sel.map(function(p){ return '<span class="pchip" data-p="'+p+'">'+p+'</span>'; }).join("")
+      : '<span class="pdrop-ph">选择部位</span>';
+    var menu = PARTS_ALL.map(function(p){
+      var on = sel.indexOf(p) >= 0;
+      return '<span class="pdrop-item'+(on?" on":"")+'" data-p="'+p+'" data-part-toggle="'+esc(r.id)+'">'
+        + '<span class="pdot" style="background:'+PART_COLORS[p]+'"></span>'+p
+        + '<span class="pcheck">&#10003;</span></span>';
+    }).join("");
+    return '<div class="pdrop" data-pdrop="'+esc(r.id)+'">'
+      + '<button type="button" class="pdrop-btn" data-pdrop-btn="'+esc(r.id)+'">'+label+'<span class="pdrop-caret">&#9662;</span></button>'
+      + '<div class="pdrop-menu">'+menu+'</div>'
+      + '</div>';
+  }
+  function strengthRowsHTML(r){
+    var lines=flatLines(r);
+    var span=lines.length;
+    return lines.map(function(ln,i){
+      var first=(i===0);
+      var cells="";
+      if(first){
+        cells += '<td class="span-cell" rowspan="'+span+'"><input class="hc" type="date" data-sk="time" value="'+esc(r.time.slice(0,10))+'"></td>';
+        cells += '<td class="span-cell parts-cell" rowspan="'+span+'">'+partTagsHTML(r)+'</td>';
+      }
+      cells += '<td><input class="hc" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.name)+'"></td>';
+      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
+      if(first){
+        var kc=calcCalories(r);
+        cells += '<td class="span-cell num" rowspan="'+span+'"><input class="hc" type="number" step="1" data-sk="kcal" value="'+esc(kc>0?kc:"")+'"></td>';
+      }
+      cells += '<td class="setact"><button type="button" class="mini-btn plus" data-set-add="'+esc(r.id)+'" data-ei="'+ln.ei+'" title="上方加一行">+</button>'
+             + '<button type="button" class="mini-btn minus" data-set-del="'+esc(r.id)+'" data-ei="'+ln.ei+'" data-si="'+ln.si+'" title="删除本行">&minus;</button></td>';
+      return '<tr data-sid="'+esc(r.id)+'"'+(first?' class="session-top"':'')+'>'+cells+'</tr>';
+    }).join("");
+  }
+  function renderStrength(){
+    var body=document.querySelector("[data-strength-body]");
+    if(!body) return;
+    var all=strengthRecords();
+    var shown=all.filter(function(r){
+      return matchSearch(r, searchTerms.strength)
+        && (!strengthFilter || (r.parts||[]).indexOf(strengthFilter)>=0);
+    });
+    var cnt=document.getElementById("cnt-strength"); if(cnt) cnt.textContent=all.length;
+    body.innerHTML = shown.length ? shown.map(strengthRowsHTML).join("")
+      : '<tr><td colspan="8" class="htable-empty">还没有力量训练记录，点下方「添加 +」开始</td></tr>';
+  }
+  function strengthEdit(el){
+    var tr=el.closest("tr"); if(!tr) return;
+    var r=findSport(tr.getAttribute("data-sid")); if(!r) return;
+    var sk=el.getAttribute("data-sk"), f=el.getAttribute("data-f");
+    if(sk==="time"){
+      var t=normTime(el.value);
+      if(!t){ toast("时间不能为空", true); renderStrength(); return; }
+      r.time=t;
+    }else if(sk==="kcal"){
+      var kv=num(el.value);
+      if(kv!=null && kv>0) r.kcal=kv; else delete r.kcal;
+    }else if(f){
+      var ei=+el.getAttribute("data-ei"), si=+el.getAttribute("data-si");
+      if(!Array.isArray(r.exercises)) r.exercises=[];
+      if(!r.exercises[ei]) r.exercises[ei]={ name:"", sets:[{}] };
+      if(!Array.isArray(r.exercises[ei].sets) || !r.exercises[ei].sets.length) r.exercises[ei].sets=[{}];
+      var s=r.exercises[ei].sets[si] || (r.exercises[ei].sets[si]={});
+      if(f==="name"){ r.exercises[ei].name=el.value.trim(); }
+      else if(f==="w"){ var w=num(el.value); s.w=w; if(w!=null && !s.unit) s.unit="kg"; }
+      else if(f==="r"){ s.r=num(el.value); }
+      else if(f==="n"){ var n=num(el.value); s.n=(n && n>0)?Math.round(n):1; }
+      syncStrengthRaw(r);
+    }
+    r.updatedAt=Date.now();
+    // NOTE: do NOT renderStrength() on plain field edits — a full re-render would
+    // destroy the (+)/(−) button under the cursor and swallow the first click.
+    // The typed value already shows in the DOM; we only persist + refresh stats.
+    save(); cloudUpsert(r); renderStats(); updTotal();
+    // keep the session's calorie figure live (auto estimate follows set changes),
+    // without clobbering the field the user is actively typing into.
+    var kc=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
+    if(kc && kc!==el){ var k=calcCalories(r); kc.value = k>0 ? k : ""; }
+  }
+  function positionPdropMenu(dd){
+    var btn=dd.querySelector(".pdrop-btn"), menu=dd.querySelector(".pdrop-menu");
+    if(!btn||!menu) return;
+    var rc=btn.getBoundingClientRect();
+    menu.style.position="fixed";
+    menu.style.top=(rc.bottom+3)+"px";
+    menu.style.left=rc.left+"px";
+  }
+  function closeAllPdrops(){
+    document.querySelectorAll('.pdrop.open').forEach(function(x){
+      x.classList.remove("open");
+      var m=x.querySelector(".pdrop-menu");
+      if(m){ m.style.position=""; m.style.top=""; m.style.left=""; }
+    });
+  }
+  function strengthTogglePart(id, p){
+    var r=findSport(id); if(!r) return;
+    if(!Array.isArray(r.parts)) r.parts=[];
+    var i=r.parts.indexOf(p);
+    if(i>=0) r.parts.splice(i,1); else r.parts.push(p);
+    r.parts = PARTS_ALL.filter(function(x){ return r.parts.indexOf(x)>=0; });
+    r.updatedAt=Date.now();
+    save(); cloudUpsert(r); renderStats();
+    // in-place refresh of just this session's parts cell — keep dropdown open
+    var cell=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] .parts-cell');
+    if(cell){
+      cell.innerHTML = partTagsHTML(r);
+      var dd=cell.querySelector('.pdrop');
+      if(dd){ dd.classList.add("open"); positionPdropMenu(dd); }
+    }else{
+      renderStrength();
+    }
+  }
+  function strengthAddSet(id, ei){
+    var r=findSport(id); if(!r) return;
+    if(!Array.isArray(r.exercises)) r.exercises=[];
+    // 点 + 在当前行「上方」插入新动作；ei<0 或越界时追加到末尾
+    var pos=(ei>=0 && ei<=r.exercises.length) ? ei : r.exercises.length;
+    r.exercises.splice(pos,0,{ name:"", sets:[{ w:null, unit:"kg", r:null, n:1 }] });
+    syncStrengthRaw(r); r.updatedAt=Date.now();
+    save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
+  }
+  function strengthDelSet(id, ei, si){
+    var r=findSport(id); if(!r) return;
+    var ex=r.exercises && r.exercises[ei]; if(!ex) return;
+    if(Array.isArray(ex.sets) && ex.sets.length>1){ ex.sets.splice(si,1); }
+    else { r.exercises.splice(ei,1); }
+    if(!r.exercises.length){
+      if(!confirm("这条力量训练已无动作，删除整条记录？")){ strengthAddSet(id,-1); return; }
+      state.records=state.records.filter(function(x){ return x.id!==id; });
+      save(); cloudDelete(id); renderStrength(); renderStats(); updTotal(); return;
+    }
+    syncStrengthRaw(r); r.updatedAt=Date.now();
+    save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
+  }
+  function strengthAddSession(){
+    var r=validate({ module:"sport", sport:"健身", time:todayStr(), parts:[], project:"" });
+    if(!r) return;
+    r.exercises=[{ name:"", sets:[{ w:null, unit:"kg", r:null, n:1 }] }];
+    syncStrengthRaw(r);
+    r.id=uid(); r.createdAt=Date.now();
+    state.records.push(r);
+    save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
+    var b=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-f="name"]');
+    if(b) b.focus();
+  }
+  function sessionDelete(id){
+    var r=findSport(id); if(!r) return;
+    if(!confirm("确认删除这条力量训练记录？")) return;
+    state.records=state.records.filter(function(x){ return x.id!==id; });
+    save(); cloudDelete(id); renderStrength(); renderStats(); updTotal();
+  }
+
+  // ---------- 有氧训练 (cardio) ----------
+  function parseDistText(sport, txt){
+    var c=WP.parseCardio(sport, txt, "");
+    if(c.distance!=null) return { distance:c.distance, unit:c.unit || (sport==="游泳"?"圈":"km") };
+    var m=String(txt||"").match(/(-?\d+(?:\.\d+)?)\s*([a-zA-Z\u4e00-\u9fa5]*)/);
+    if(m){
+      var u=m[2]||"";
+      if(/km|公里|千米/i.test(u)) u="km"; else if(/圈/.test(u)) u="圈"; else if(/m|米/i.test(u)) u="m";
+      return { distance:parseFloat(m[1]), unit:u || (sport==="游泳"?"圈":"km") };
+    }
+    return { distance:null, unit:"" };
+  }
+  function cardioRowHTML(r){
+    var opts=CARDIO_SPORTS.map(function(o){ return '<option value="'+esc(o)+'"'+(r.sport===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("");
+    var distTxt = (r.distance!=null) ? (r.distance + (r.distUnit||"")) : (r.raw || r.note || "");
+    var pace=cardioPaceStr(r), kcal=calcCalories(r);
+    return '<tr data-cid="'+esc(r.id)+'">'
+      + '<td><input class="hc" type="date" data-cf="time" value="'+esc(r.time.slice(0,10))+'"></td>'
+      + '<td><select class="hc" data-cf="sport">'+opts+'</select></td>'
+      + '<td class="num"><input class="hc" type="number" step="any" data-cf="duration" value="'+esc(r.duration==null?"":r.duration)+'"></td>'
+      + '<td><input class="hc" data-cf="dist" value="'+esc(distTxt)+'"></td>'
+      + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
+      + '<td class="num"><input class="hc" type="number" step="1" data-cf="kcal" value="'+esc(kcal>0?kcal:"")+'"></td>'
+      + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="新增一条">+</button>'
+        + '<button type="button" class="mini-btn minus" data-cardio-del="'+esc(r.id)+'" title="删除">&minus;</button></td>'
+      + '</tr>';
+  }
+  function renderCardio(){
+    var body=document.querySelector("[data-cardio-body]");
+    if(!body) return;
+    var all=cardioRecords();
+    var shown=all.filter(function(r){
+      return matchSearch(r, searchTerms.cardio)
+        && (!cardioFilter || r.sport===cardioFilter);
+    });
+    var cnt=document.getElementById("cnt-cardio"); if(cnt) cnt.textContent=all.length;
+    body.innerHTML = shown.length ? shown.map(cardioRowHTML).join("")
+      : '<tr><td colspan="7" class="htable-empty">还没有有氧训练记录，点下方「添加 +」开始</td></tr>';
+  }
+  function cardioEdit(el){
+    var tr=el.closest("tr"); if(!tr) return;
+    var r=findSport(tr.getAttribute("data-cid")); if(!r) return;
+    var f=el.getAttribute("data-cf");
+    var needRerender=false;
+    if(f==="time"){
+      var t=normTime(el.value);
+      if(!t){ toast("时间不能为空", true); renderCardio(); return; }
+      r.time=t;
+    }else if(f==="sport"){
+      if(CARDIO_SPORTS.indexOf(el.value)<0) return;
+      r.sport=el.value;
+      r.parts=[];
+      if(cardioFilter) needRerender=true;   // may drop out of active type filter
+    }else if(f==="duration"){
+      r.duration=normDur(el.value);
+    }else if(f==="dist"){
+      var d=parseDistText(r.sport, el.value);
+      r.distance=d.distance; r.distUnit=d.unit;
+      r.raw = (d.distance==null && el.value) ? String(el.value).trim() : "";
+    }else if(f==="kcal"){
+      var kv=num(el.value);
+      if(kv!=null && kv>0) r.kcal=kv; else delete r.kcal;
+    }
+    r.updatedAt=Date.now();
+    save(); cloudUpsert(r); renderStats(); updTotal();
+    if(needRerender){ renderCardio(); return; }
+    // update derived (readonly) cells in place — avoids destroying the (+)/(−)
+    // buttons mid-click (which otherwise required a second click).
+    var pc=tr.querySelector('[data-cell="pace"]'); if(pc) pc.textContent=cardioPaceStr(r);
+    var kc=tr.querySelector('[data-cf="kcal"]');
+    if(kc && kc!==el){ var k=calcCalories(r); kc.value = k>0 ? k : ""; }
+  }
+  function cardioAdd(){
+    var r=validate({ module:"sport", sport:"跑步", time:todayStr(), project:"" });
+    if(!r) return;
+    r.id=uid(); r.createdAt=Date.now();
+    state.records.push(r);
+    save(); cloudUpsert(r); renderCardio(); renderStats(); updTotal();
+    var b=document.querySelector('[data-cardio-body] tr[data-cid="'+r.id+'"] [data-cf="dist"]');
+    if(b) b.focus();
+  }
+  function cardioDelete(id){
+    var r=findSport(id); if(!r) return;
+    if(!confirm("确认删除这条有氧训练记录？")) return;
+    state.records=state.records.filter(function(x){ return x.id!==id; });
+    save(); cloudDelete(id); renderCardio(); renderStats(); updTotal();
+  }
+
+  function updTotal(){ var t=document.getElementById("totalCount"); if(t) t.textContent="共 "+state.records.length+" 条"; }
+
+  function renderModule(m){
+    if(m==="sport"){ renderStrength(); renderCardio(); }
+    else if(m==="strength") renderStrength();
+    else if(m==="cardio") renderCardio();
+    else sheetRender(m);
+  }
+  function renderAll(){
+    MODULES.forEach(renderModule);
+    renderStats();
+    document.getElementById("totalCount").textContent = "共 "+state.records.length+" 条";
+  }
+
+  // ---------- interactive spreadsheet engine (all modules) ----------
+  var SHEET_COLS = {
+    thought: [
+      {k:"time",    type:"time"},
+      {k:"content", type:"text", ph:"此刻的一个念头 / 一句话 / 一个问题"}
+    ],
+    sport: [
+      {k:"time",     type:"time"},
+      {k:"sport",    type:"select", opts:SPORTS},
+      {k:"parts",    type:"text", ph:"胸/背/肩/腿"},
+      {k:"detail",   type:"text", ph:"健身:卧推60kg×12×3；有氧:5km 或 25圈"},
+      {k:"duration", type:"num",  ph:"分"},
+      {k:"pace",     type:"ro"},
+      {k:"kcal",     type:"ro"},
+      {k:"note",     type:"text", ph:"状态/内容"}
+    ],
+    book: [
+      {k:"time",      type:"time"},
+      {k:"book",      type:"text", ph:"如 活着（余华）"},
+      {k:"fromPage",  type:"num"},
+      {k:"toPage",    type:"num"},
+      {k:"pagesRead", type:"ro"},
+      {k:"note",      type:"text", ph:"触动 / 摘抄 / 想法"}
+    ],
+    house: [
+      {k:"time",       type:"time", ph:"YYYY-MM-DD"},
+      {k:"district",   type:"text"},
+      {k:"metro",      type:"text"},
+      {k:"community",  type:"text", cls:"col-comm", ph:"小区名"},
+      {k:"propType",   type:"text"},
+      {k:"year",       type:"num"},
+      {k:"school",     type:"text"},
+      {k:"area",       type:"num"},
+      {k:"totalPrice", type:"num"},
+      {k:"unitPrice",  type:"num"},
+      {k:"downPay",    type:"num"},
+      {k:"remark",     type:"text"}
+    ]
+  };
+
+  function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function nextHouseSeq(){
+    var mx=0; state.records.forEach(function(r){ if(r.module==="house" && r.seq!=null && r.seq>mx) mx=r.seq; });
+    return mx+1;
+  }
+  function sheetRecords(m){
+    if(m==="house"){
+      var arr=state.records.filter(function(r){ return r.module==="house"; });
+      arr.sort(function(a,b){
+        var aa=!!a.added, ba=!!b.added;
+        if(aa!==ba) return aa ? -1 : 1;                 // user-added rows on top
+        if(aa){
+          var c=(b.time||"").localeCompare(a.time||"");  // newest time first
+          if(c!==0) return c;
+          return (b.createdAt||0)-(a.createdAt||0);
+        }
+        var sa=(a.seq==null?1e9:a.seq), sb=(b.seq==null?1e9:b.seq);
+        if(sa!==sb) return sa-sb;                        // seed rows: source order
+        return (a.createdAt||0)-(b.createdAt||0);
+      });
+      return arr;
+    }
+    return recordsOf(m);
+  }
+
+  // record -> display value for a given cell
+  function sheetCellVal(m, r, k){
+    if(m==="sport"){
+      if(k==="parts") return (r.parts||[]).join("/");
+      if(k==="detail"){
+        if(r.sport==="健身") return WP.serializeExercises(r.exercises||[]);
+        if(r.distance!=null) return r.distance + (r.distUnit||"");
+        return r.raw || "";
+      }
+      if(k==="pace"){ var p=paceStr(r); return p ? p.replace("配速 ","") : ""; }
+      if(k==="kcal"){ var c=calcCalories(r); return c>0 ? c : ""; }
+      if(k==="duration") return (r.duration==null||r.duration==="") ? "" : r.duration;
+      return r[k]==null ? "" : r[k];
+    }
+    if(m==="book" && k==="pagesRead") return (r.pagesRead!=null) ? r.pagesRead : "";
+    return r[k]==null ? "" : r[k];
+  }
+
+  // row cells -> raw record for validate()
+  function sheetBuildRaw(m, c){
+    var o={ module:m, time:c.time||"" };
+    if(m==="thought"){ o.content=c.content; }
+    else if(m==="book"){ o.book=c.book; o.fromPage=c.fromPage; o.toPage=c.toPage; o.note=c.note; }
+    else if(m==="sport"){
+      o.sport=c.sport;
+      o.parts = c.parts ? String(c.parts).split(/[\/,，、\s]+/).filter(Boolean) : [];
+      o.project = c.detail||"";
+      o.duration = c.duration;
+      o.note = c.note;
+    }else if(m==="house"){
+      o.community=c.community; o.district=c.district; o.metro=c.metro; o.propType=c.propType;
+      o.year=c.year; o.school=c.school; o.area=c.area; o.totalPrice=c.totalPrice;
+      o.unitPrice=c.unitPrice; o.downPay=c.downPay; o.remark=c.remark;
+    }
+    return o;
+  }
+
+  function sheetCellHTML(m, col, r, isNew){
+    var k=col.k;
+    if(col.type==="ro"){
+      var disp = r ? sheetCellVal(m,r,k) : "";
+      return '<td class="readonly'+(col.cls?(" "+col.cls):"")+'">'+esc(disp)+'</td>';
+    }
+    var val = r ? sheetCellVal(m,r,k) : (isNew && k==="time" ? todayStr() : "");
+    var tdcls=((col.cls?col.cls+" ":"")+(col.type==="num"?"num":"")).trim();
+    if(k==="time") tdcls=(tdcls?tdcls+" ":"")+"tcell";
+    var ph = col.ph ? (' placeholder="'+esc(col.ph)+'"') : '';
+    var inner;
+    if(col.type==="select"){
+      inner='<select class="hc" data-k="'+k+'"><option value=""></option>'
+        + col.opts.map(function(o){ return '<option value="'+esc(o)+'"'+(String(val)===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("")
+        + '</select>';
+    }else{
+      var itype=(col.type==="num")?"number":"text";
+      var step=(col.type==="num")?' step="any"':'';
+      inner='<input class="hc" type="'+itype+'"'+step+' data-k="'+k+'" value="'+esc(val)+'"'+ph+'>';
+    }
+    if(k==="time" && r){
+      inner += '<button type="button" class="row-del" data-sheet-del="'+esc(r.id)+'" title="删除本行">&#10005;</button>';
+    }
+    return '<td'+(tdcls?(' class="'+tdcls+'"'):'')+'>'+inner+'</td>';
+  }
+  function sheetRowHTML(m, r, cols){
+    var tds=cols.map(function(c){ return sheetCellHTML(m,c,r,false); }).join("");
+    if(m==="house") tds+=houseImageCellHTML(r);
+    return '<tr data-id="'+esc(r.id)+'">'+tds+'</tr>';
+  }
+  function sheetNewRowHTML(m, cols){
+    var tds=cols.map(function(c){ return sheetCellHTML(m,c,null,true); }).join("");
+    if(m==="house") tds+=houseImageCellHTML(null);
+    return '<tr class="sheet-new" data-new="1">'+tds+'</tr>';
+  }
+  function houseImageCellHTML(r){
+    if(!r) return '<td class="himg-cell"><span class="himg-hint">保存后可加图</span></td>';
+    var imgs=r.images||[];
+    var thumbs=imgs.map(function(src,i){
+      return '<span class="himg" data-himg-view="'+esc(r.id)+'" data-idx="'+i+'"><img src="'+esc(src)+'" alt="房图"><button type="button" class="himg-x" data-himg-del="'+esc(r.id)+'" data-idx="'+i+'" title="移除">&#10005;</button></span>';
+    }).join("");
+    return '<td class="himg-cell"><div class="himgs">'+thumbs+'<button type="button" class="himg-add" data-himg-add="'+esc(r.id)+'" title="插入图片">+</button></div></td>';
+  }
+  function sheetRender(m){
+    var body=document.querySelector('[data-sheet-body="'+m+'"]');
+    if(!body) return;
+    var cols=SHEET_COLS[m];
+    var all=sheetRecords(m);
+    var shown=all.filter(function(r){ return matchSearch(r, searchTerms[m]); });
+    var cntEl=document.getElementById("cnt-"+m);
+    if(cntEl) cntEl.textContent=all.length;
+    var html=shown.map(function(r){ return sheetRowHTML(m,r,cols); }).join("");
+    html += sheetNewRowHTML(m, cols);   // blank trailing row = 新增
+    body.innerHTML=html;
+  }
+  function sheetReadRow(tr){
+    var c={};
+    tr.querySelectorAll("[data-k]").forEach(function(el){ c[el.getAttribute("data-k")]=el.value; });
+    return c;
+  }
+  function renderAfterChange(m){
+    sheetRender(m);
+    if(m==="sport") renderStats();
+    document.getElementById("totalCount").textContent="共 "+state.records.length+" 条";
+  }
+  function sheetOnChange(m, tr){
+    var cells=sheetReadRow(tr);
+    var raw=sheetBuildRaw(m, cells);
+    if(tr.getAttribute("data-new")==="1"){
+      var r=validate(raw);
+      if(!r) return;                       // still incomplete; let the user keep typing
+      if(m==="house"){ r.seq=nextHouseSeq(); r.added=true; if(!Array.isArray(r.images)) r.images=[]; }
+      var sigs=existingSignatures();
+      if(sigs[signature(r)]){ toast("这条记录已存在，未重复添加", true); sheetRender(m); return; }
+      r.id=uid(); r.createdAt=Date.now();
+      state.records.push(r);
+      save(); cloudUpsert(r); renderAfterChange(m); toast("已新增");
+    }else{
+      var id=tr.getAttribute("data-id");
+      var idx=state.records.findIndex(function(x){ return x.id===id; });
+      if(idx<0) return;
+      var r2=validate(raw);
+      if(!r2){ toast("字段不完整，未保存改动", true); sheetRender(m); return; }
+      r2.id=id; r2.createdAt=state.records[idx].createdAt||Date.now(); r2.updatedAt=Date.now();
+      if(m==="house"){
+        r2.seq=(state.records[idx].seq!=null?state.records[idx].seq:nextHouseSeq());
+        r2.images=Array.isArray(state.records[idx].images)?state.records[idx].images:[];
+        r2.added=!!state.records[idx].added;
+      }
+      state.records[idx]=r2;
+      save(); cloudUpsert(r2); renderAfterChange(m);
+    }
+  }
+  function sheetDelete(m, id){
+    var r=state.records.find(function(x){ return x.id===id; });
+    if(!r) return;
+    var msg = (m==="house") ? ("确认删除「"+(r.community||"该")+"」这条看房记录？")
+            : (m==="book")  ? ("确认删除《"+(r.book||"该")+"》这条阅读记录？")
+            : "确认删除这条记录？";
+    if(!confirm(msg)) return;
+    state.records=state.records.filter(function(x){ return x.id!==id; });
+    save(); cloudDelete(id); renderAfterChange(m);
+  }
+  function migrateHouse(){
+    var before=state.records.length;
+    state.records=state.records.filter(function(r){ return !(r.module==="house" && r.v!==2); });
+    if(state.records.length!==before) save();
+  }
+
+  // ---------- house images ----------
+  function findHouse(id){
+    return state.records.find(function(x){ return x.id===id && x.module==="house"; });
+  }
+  function resizeImageFile(file, cb){
+    if(!file || !/^image\//.test(file.type)){ cb(null); return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var max=1280, w=img.naturalWidth, h=img.naturalHeight;
+        if(w>max || h>max){ var s=Math.min(max/w, max/h); w=Math.round(w*s); h=Math.round(h*s); }
+        var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+        var ctx=cv.getContext("2d"); ctx.drawImage(img,0,0,w,h);
+        try{ cb(cv.toDataURL("image/jpeg",0.72)); }catch(err){ cb(reader.result); }
+      };
+      img.onerror=function(){ cb(null); };
+      img.src=reader.result;
+    };
+    reader.onerror=function(){ cb(null); };
+    reader.readAsDataURL(file);
+  }
+  function houseAddImage(id){
+    var r=findHouse(id); if(!r) return;
+    var inp=document.createElement("input");
+    inp.type="file"; inp.accept="image/*"; inp.multiple=true;
+    inp.onchange=function(){
+      var files=Array.prototype.slice.call(inp.files||[]);
+      if(!files.length) return;
+      if(!Array.isArray(r.images)) r.images=[];
+      var pending=files.length;
+      files.forEach(function(f){
+        resizeImageFile(f, function(dataUrl){
+          if(dataUrl) r.images.push(dataUrl);
+          if(--pending===0){
+            r.updatedAt=Date.now();
+            save(); cloudUpsert(r); sheetRender("house"); toast("已插入图片");
+          }
+        });
+      });
+    };
+    inp.click();
+  }
+  function houseRemoveImage(id, idx){
+    var r=findHouse(id); if(!r || !Array.isArray(r.images)) return;
+    if(idx<0 || idx>=r.images.length) return;
+    r.images.splice(idx,1);
+    r.updatedAt=Date.now();
+    save(); cloudUpsert(r); sheetRender("house");
+  }
+  function openLightbox(src){
+    if(!src) return;
+    var box=document.getElementById("imgLightbox");
+    if(!box){
+      box=document.createElement("div");
+      box.id="imgLightbox";
+      box.innerHTML='<img alt="房图预览">';
+      box.addEventListener("click", function(){ box.classList.remove("on"); });
+      document.body.appendChild(box);
+    }
+    box.querySelector("img").src=src;
+    box.classList.add("on");
+  }
+
+  // ---------- sport statistics ----------
+  var statsRange = "day";      // day | week | month —— 控制左侧指标汇总的时间范围
+  var calYM = null;            // {y,m} 日历查看的月份
+  var calSelDay = null;        // 点开查看详情的日
+  var chartUnit = "km";        // km | kcal
+  var chartProj = "all";       // all | 跑步 | 游泳 | 爬山 | 骑车 | 力量
+  var chartYearSel = null;     // 全年图选中的月 idx (0-11)
+  var chartMonthSel = null;    // 本月图选中的日 (1-31)
+  function renderStats(){
+    // reflect current weight into the input
+    var wIn = document.querySelector('[data-k="weightKg"]');
+    if(wIn && document.activeElement!==wIn) wIn.value = (state.profile&&state.profile.weightKg)||DEFAULT_PROFILE.weightKg;
+    renderStatsLeft();
+    renderStatsChart();
+  }
+  // 左侧：3 块总览 (有氧时长 / 力量次数+部位 / 消耗) + 始终展示的运动日历
+  function renderStatsLeft(){
+    var box = document.querySelector("[data-stats-cal]");
+    if(!box) return;
+    var now = new Date();
+    var rows = state.records.filter(function(r){
+      if(r.module!=="sport") return false;
+      var d = recDate(r);
+      return d && periodKey(d,statsRange)===periodKey(now,statsRange);
+    });
+    var cardioDurByKind = {};   // 分类型累计有氧分钟
+    var cardioTotalDur = 0;
+    var strengthDayset = {};    // 力量按天去重: dayKey -> true
+    var strengthDaysetByPart = {}; // 部位 -> Set(dayKey)
+    PARTS_ALL.forEach(function(p){ strengthDaysetByPart[p] = {}; });
+    var totalCal = 0;
+    var calBySport = {};
+    rows.forEach(function(r){
+      var c = calcCalories(r); totalCal += c;
+      var sp = r.sport||"其他";
+      if(!calBySport[sp]) calBySport[sp] = 0;
+      calBySport[sp] += c;
+      if(r.sport==="健身"){
+        var d = recDate(r);
+        var dk = d ? ymd(d) : "";
+        if(dk){
+          strengthDayset[dk] = true;
+          (r.parts||[]).forEach(function(p){
+            if(strengthDaysetByPart[p]) strengthDaysetByPart[p][dk] = true;
+          });
+        }
+      }else{
+        var mins = num(r.duration)||0;
+        if(mins>0){
+          cardioTotalDur += mins;
+          var k = cardioKind(r)||"其他";
+          cardioDurByKind[k] = (cardioDurByKind[k]||0) + mins;
+        }
+      }
+    });
+    var strengthDayCount = Object.keys(strengthDayset).length;
+    var periodName = periodLabel(now, statsRange);
+    var overview;
+    if(!rows.length){
+      overview = '<div class="st-empty">'+esc(periodName)+' 还没有运动记录</div>';
+    }else{
+      // 有氧块
+      var cardioChips = CARDIO_KINDS.map(function(k){
+        var m = cardioDurByKind[k]||0; if(!(m>0)) return "";
+        return '<span class="ov-chip"><i style="background:'+CARDIO_COLORS[k]+'"></i>'+esc(k)+' '+m+'</span>';
+      }).filter(function(x){return x;}).join("");
+      var cardioBlock = '<div class="ov-block">'
+        + '<div class="ov-meta"><div class="ov-label">有氧时长</div>'
+        + '<div class="ov-main">'+cardioTotalDur+'<span class="ov-unit">分钟</span></div></div>'
+        + (cardioChips ? '<div class="ov-chips">'+cardioChips+'</div>' : '<div class="ov-chips ov-empty">无有氧</div>')
+        + '</div>';
+      // 力量块
+      var partChips = PARTS_ALL.map(function(p){
+        var c = Object.keys(strengthDaysetByPart[p]||{}).length;
+        return '<span class="ov-chip"><i style="background:'+PART_COLORS[p]+'"></i>'+esc(p)+' '+c+'</span>';
+      }).join("");
+      var strengthBlock = '<div class="ov-block">'
+        + '<div class="ov-meta"><div class="ov-label">力量训练</div>'
+        + '<div class="ov-main">'+strengthDayCount+'<span class="ov-unit">次</span></div></div>'
+        + '<div class="ov-chips">'+partChips+'</div>'
+        + '</div>';
+      // 消耗块
+      var calChips = SPORTS.map(function(sp){
+        var c = calBySport[sp]||0; if(!(c>0)) return "";
+        var color = (sp==="健身") ? "#7c3aed"
+                  : (CARDIO_COLORS[cardioKind({sport:sp})||"其他"]||SPORT_GREEN);
+        return '<span class="ov-chip"><i style="background:'+color+'"></i>'+esc(sp)+' '+c.toLocaleString()+'</span>';
+      }).filter(function(x){return x;}).join("");
+      var calBlock = '<div class="ov-block">'
+        + '<div class="ov-meta"><div class="ov-label">消耗</div>'
+        + '<div class="ov-main">'+Math.round(totalCal).toLocaleString()+'<span class="ov-unit">千卡</span></div></div>'
+        + (calChips ? '<div class="ov-chips">'+calChips+'</div>' : '<div class="ov-chips ov-empty">无消耗</div>')
+        + '</div>';
+      overview = '<div class="ov-period">'+esc(periodName)+'</div>'
+        + '<div class="ov-grid">'+cardioBlock+strengthBlock+calBlock+'</div>';
+    }
+    box.innerHTML = overview + '<div class="st-cal-wrap" style="margin-top:12px">'+calendarHTML()+'</div>';
+  }
+  // ---------- 右侧：运动趋势柱状图 ----------
+  function projMatch(r, proj){
+    if(proj==="all") return true;
+    if(proj==="力量") return r.sport==="健身";
+    if(proj==="骑车") return r.sport==="骑行";
+    if(proj==="爬山") return r.sport==="爬山" || (r.sport==="其他" && /爬山|登山|徒步|hike/i.test((r.note||"")+(r.raw||"")));
+    return r.sport===proj;   // 跑步 / 游泳
+  }
+  function chartVal(r, unit){
+    if(unit==="kcal") return calcCalories(r);
+    return distanceKm(r);
+  }
+  function renderStatsChart(){
+    var box=document.querySelector("[data-stats-chart]");
+    if(!box) return;
+    var now=new Date();
+    var yy=now.getFullYear(), mm=now.getMonth();
+    // ---- 全年 12 月桶 ----
+    var yBuckets=[]; for(var mi=0;mi<12;mi++) yBuckets.push(0);
+    state.records.forEach(function(r){
+      if(r.module!=="sport" || !projMatch(r,chartProj)) return;
+      var d=recDate(r); if(!d || d.getFullYear()!==yy) return;
+      yBuckets[d.getMonth()] += chartVal(r, chartUnit);
+    });
+    // ---- 本月 N 日桶 ----
+    var days=new Date(yy,mm+1,0).getDate();
+    var dBuckets=[]; for(var di=0;di<days;di++) dBuckets.push(0);
+    state.records.forEach(function(r){
+      if(r.module!=="sport" || !projMatch(r,chartProj)) return;
+      var d=recDate(r); if(!d || d.getFullYear()!==yy || d.getMonth()!==mm) return;
+      dBuckets[d.getDate()-1] += chartVal(r, chartUnit);
+    });
+    var unitTxt = chartUnit==="km" ? "公里" : "千卡";
+    var rnd = function(v){ return chartUnit==="km" ? Math.round(v*10)/10 : Math.round(v); };
+    var yVals = yBuckets.map(rnd), dVals = dBuckets.map(rnd);
+    var yTot = rnd(yBuckets.reduce(function(a,b){return a+b;},0));
+    var dTot = rnd(dBuckets.reduce(function(a,b){return a+b;},0));
+    var barColor = (chartUnit==="km") ? SPORT_GREEN : "#7c3aed";
+    var projName = (chartProj==="all") ? "全部" : chartProj;
+    function makeBars(vals, labels, scope, sel, curLabel){
+      var max = Math.max.apply(null, vals.concat([0]));
+      if(max<=0){
+        return '<div class="chart-empty">'+esc(scope)+' 暂无'+unitTxt+'数据</div>';
+      }
+      return '<div class="stbars" style="--bar:'+barColor+'">'+vals.map(function(v,idx){
+        var h = v>0 ? Math.max(3, Math.round(v/max*100)) : 0;
+        var isSel = (sel!=null && labels[idx]===sel);
+        var isNow = (labels[idx]===curLabel);
+        var cls = 'stbar'+(v>0?"":" zero")+(isNow?" hot":"")+(isSel?" sel":"");
+        var attr = v>0 ? (' data-bar-idx="'+labels[idx]+'"') : "";
+        return '<div class="'+cls+'"'+attr+' title="'+labels[idx]+'：'+v+unitTxt+'">'
+          + '<span class="stbar-val">'+(v>0?v:"")+'</span>'
+          + '<span class="stbar-fill" style="height:'+h+'%"></span>'
+          + '<span class="stbar-x">'+labels[idx]+'</span>'
+          + '</div>';
+      }).join("")+'</div>';
+    }
+    function detailPanel(scope, sel, isYear){
+      if(sel==null) return '';
+      var recs = state.records.filter(function(r){
+        if(r.module!=="sport" || !projMatch(r,chartProj)) return false;
+        var d=recDate(r); if(!d) return false;
+        if(d.getFullYear()!==yy) return false;
+        if(isYear) return d.getMonth()===(sel-1);
+        return d.getMonth()===mm && d.getDate()===sel;
+      }).sort(function(a,b){ return (a.time||"").localeCompare(b.time||""); });
+      var title = isYear ? (yy+' 年 '+sel+' 月') : (yy+'/'+(mm+1)+'/'+sel);
+      if(!recs.length) return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div><div class="bd-empty">该区间暂无数据</div></div>';
+      var rows = recs.map(function(r){
+        var badgesHTML, body;
+        if(r.sport==="健身"){
+          var pts=(r.parts||[]);
+          badgesHTML = pts.length
+            ? pts.map(function(p){ return '<span class="bd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
+            : '<span class="bd-badge" style="background:#94a3b8">力量</span>';
+          var names=(r.exercises||[]).map(function(e){return (e.name||"").trim();}).filter(function(x){return x;});
+          body = names.length ? names.join("、") : "（未填动作）";
+        }else{
+          var k = cardioKind(r)||"其他";
+          var ccolor = CARDIO_COLORS[k];
+          var label = r.sport||k;
+          badgesHTML = '<span class="bd-badge" style="background:'+ccolor+'">'+esc(label)+'</span>';
+          var bits=[];
+          if(r.distance!=null && r.distance!=="") bits.push(r.distance+(r.distUnit||""));
+          var du=num(r.duration); if(du!=null && du>0) bits.push(du+"分钟");
+          var kc=calcCalories(r); if(kc>0) bits.push(kc+"千卡");
+          body = bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
+        }
+        var dp = recDate(r);
+        var dstr = isYear && dp ? ((dp.getMonth()+1)+"/"+dp.getDate()+" ") : "";
+        return '<div class="bd-row">'+badgesHTML
+          + '<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>';
+      }).join("");
+      return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div>'+rows+'</div>';
+    }
+    var yLabels=[]; for(var i=0;i<12;i++) yLabels.push(i+1);
+    var dLabels=[]; for(var j=0;j<days;j++) dLabels.push(j+1);
+    var yearHTML = '<div class="chart-sub" data-bar-scope="year">'
+      + '<div class="chart-sub-title">全年 <span class="csub-scope">'+yy+' 年 · '+esc(projName)+' · 合计 <b>'+yTot+'</b>'+unitTxt+'</span></div>'
+      + makeBars(yVals, yLabels, yy+' 年', chartYearSel, mm+1)
+      + detailPanel(yy+' 年', chartYearSel, true)
+      + '</div>';
+    var monthHTML = '<div class="chart-sub" data-bar-scope="month">'
+      + '<div class="chart-sub-title">本月 <span class="csub-scope">'+yy+' 年 '+(mm+1)+' 月 · '+esc(projName)+' · 合计 <b>'+dTot+'</b>'+unitTxt+'</span></div>'
+      + makeBars(dVals, dLabels, (mm+1)+' 月', chartMonthSel, now.getDate())
+      + detailPanel((mm+1)+' 月', chartMonthSel, false)
+      + '</div>';
+    box.innerHTML = '<div class="chart-stack">'+yearHTML+monthHTML+'</div>';
+  }
+  // ---- 日历视角：每天练了哪些部位 ----
+  function partLegendHTML(withCardio){
+    var s = PARTS_ALL.map(function(p){ return '<span><i style="background:'+PART_COLORS[p]+'"></i>'+p+'</span>'; }).join("");
+    s += '<span><i style="background:#94a3b8"></i>力量(未分部位)</span>';
+    if(withCardio){
+      s += CARDIO_KINDS.filter(function(k){return k!=="其他";}).map(function(k){
+        return '<span><i style="background:'+CARDIO_COLORS[k]+'"></i>'+k+'</span>';
+      }).join("");
+    }
+    return '<div class="cal-legend">'+s+'</div>';
+  }
+  function calendarHTML(){
+    if(!calYM){ var t=new Date(); calYM={ y:t.getFullYear(), m:t.getMonth() }; }
+    var y=calYM.y, m=calYM.m;
+    var map={};
+    state.records.forEach(function(r){
+      if(r.module!=="sport") return;
+      var d=recDate(r); if(!d) return;
+      if(d.getFullYear()!==y || d.getMonth()!==m) return;
+      var key=d.getDate();
+      if(!map[key]) map[key]={ parts:{}, gym:false, cardio:{} };
+      if(r.sport==="健身"){ map[key].gym=true; (r.parts||[]).forEach(function(p){ map[key].parts[p]=true; }); }
+      else { var k=cardioKind(r)||"其他"; map[key].cardio[k]=true; }
+    });
+    var firstDow=new Date(y,m,1).getDay();      // 0=Sun
+    var days=new Date(y,m+1,0).getDate();
+    var today=new Date(); var isThisMonth=(today.getFullYear()===y && today.getMonth()===m);
+    var html='<div class="cal-nav"><button type="button" data-cal-nav="-1">&#8249;</button>'
+      + '<span class="cal-title">'+y+' 年 '+(m+1)+' 月</span>'
+      + '<button type="button" data-cal-nav="1">&#8250;</button></div>';
+    html+='<div class="cal-grid">';
+    ["日","一","二","三","四","五","六"].forEach(function(w){ html+='<div class="cal-dow">'+w+'</div>'; });
+    for(var i=0;i<firstDow;i++) html+='<div class="cal-cell empty"></div>';
+    for(var dd=1;dd<=days;dd++){
+      var info=map[dd], dots="", hasInfo=false;
+      if(info){
+        PARTS_ALL.forEach(function(p){ if(info.parts[p]) { dots+='<span class="cal-dot" style="background:'+PART_COLORS[p]+'"></span>'; hasInfo=true; } });
+        if(info.gym && !Object.keys(info.parts).length) { dots+='<span class="cal-dot" style="background:#94a3b8"></span>'; hasInfo=true; }
+        CARDIO_KINDS.forEach(function(k){ if(info.cardio[k]) { dots+='<span class="cal-dot" style="background:'+CARDIO_COLORS[k]+'"></span>'; hasInfo=true; } });
+      }
+      var cls='cal-cell'+((isThisMonth&&dd===today.getDate())?' today':'');
+      if(hasInfo){ cls+=' has'; if(calSelDay===dd) cls+=' sel'; }
+      var attr=hasInfo?(' data-cal-day="'+dd+'"'):"";
+      html+='<div class="'+cls+'"'+attr+'><div class="cal-day">'+dd+'</div><div class="cal-dots">'+dots+'</div></div>';
+    }
+    html+='</div>';
+    html+=partLegendHTML(true);
+    if(calSelDay && map[calSelDay]) html+=calDayDetailHTML(y,m,calSelDay);
+    return html;
+  }
+  // detail panel for a clicked calendar day: strength = 部位 + 项目名;
+  // cardio = 项目 + 时长 + 距离.
+  function calDayDetailHTML(y,m,dd){
+    var recs=state.records.filter(function(r){
+      if(r.module!=="sport") return false;
+      var d=recDate(r); return d && d.getFullYear()===y && d.getMonth()===m && d.getDate()===dd;
+    });
+    var head='<div class="cd-date">'+y+' 年 '+(m+1)+' 月 '+dd+' 日</div>';
+    if(!recs.length) return '<div class="cal-detail">'+head+'<div class="cd-empty">这天没有运动记录</div></div>';
+    var rows=recs.map(function(r){
+      if(r.sport==="健身"){
+        var parts=(r.parts||[]);
+        var badges = parts.length
+          ? parts.map(function(p){ return '<span class="cd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
+          : '<span class="cd-badge" style="background:#94a3b8">力量</span>';
+        var names=(r.exercises||[]).map(function(e){ return (e.name||"").trim(); })
+                    .filter(function(x){ return x; });
+        var body=names.length ? names.join("、") : "（未填动作）";
+        return '<div class="cd-row">'+badges
+             + '<span class="cd-body">'+esc(body)+'</span></div>';
+      }else{
+        var k = cardioKind(r)||"其他";
+        var ccolor = CARDIO_COLORS[k];
+        var bits=[];
+        if(r.distance!=null) bits.push(r.distance+(r.distUnit||""));
+        var du=num(r.duration); if(du!=null && du>0) bits.push(du+" 分钟");
+        var kc=calcCalories(r); if(kc>0) bits.push(kc+" 千卡");
+        var body2=bits.length ? bits.join(" · ") : (r.raw||r.note||"—");
+        return '<div class="cd-row"><span class="cd-badge" style="background:'+ccolor+'">'+esc(r.sport)+'</span>'
+             + '<span class="cd-body">'+esc(body2)+'</span></div>';
+      }
+    }).join("");
+    return '<div class="cal-detail">'+head+rows+'</div>';
+  }
+
+  // ---------- export / import UI ----------
+  function doExport(){
+    var payload={ app:"daily-records", version:1, exportedAt:new Date().toISOString(), records:state.records };
+    var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    var d=new Date(); var name="daily-records-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".json";
+    a.href=url; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },200);
+    toast("已导出 "+state.records.length+" 条到 "+name);
+  }
+  function parseImport(text){
+    var data=JSON.parse(text);
+    if(Array.isArray(data)) return data;
+    if(data && Array.isArray(data.records)) return data.records;
+    throw new Error("格式应为数组或含 records 字段的对象");
+  }
+  function runImport(text){
+    var list;
+    try{ list=parseImport(text); }
+    catch(e){ toast("JSON 解析失败："+e.message, true); return; }
+    var res=importRecords(list);
+    renderAll();
+    var msg="导入完成：新增 "+res.added+" 条";
+    if(res.skippedDup) msg+="，去重跳过 "+res.skippedDup+" 条";
+    if(res.invalid) msg+="，非法跳过 "+res.invalid+" 条";
+    toast(msg, res.added===0 && (res.skippedDup||res.invalid));
+    closeModal();
+  }
+  function openModal(){ document.getElementById("importModal").classList.add("on"); }
+  function closeModal(){
+    document.getElementById("importModal").classList.remove("on");
+    document.getElementById("importText").value="";
+    var f=document.getElementById("importFile"); if(f) f.value="";
+  }
+
+  // ---------- wire up ----------
+  function bind(){
+    document.getElementById("btnExport").addEventListener("click", doExport);
+    document.getElementById("btnImport").addEventListener("click", openModal);
+    document.getElementById("doImport").addEventListener("click", function(){
+      runImport(document.getElementById("importText").value.trim());
+    });
+    document.querySelectorAll("[data-close-modal]").forEach(function(b){ b.addEventListener("click", closeModal); });
+    document.getElementById("importModal").addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+    var fileEl=document.getElementById("importFile");
+    if(fileEl) fileEl.addEventListener("change", function(){
+      var f=this.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(){ document.getElementById("importText").value=rd.result; };
+      rd.readAsText(f);
+    });
+
+    // spreadsheet tables: cell change = auto-save; blank trailing row = 新增; 行尾 × = 删除
+    MODULES.forEach(function(m){
+      var body=document.querySelector('[data-sheet-body="'+m+'"]');
+      if(!body) return;
+      body.addEventListener("change", function(e){
+        var inp=e.target.closest("[data-k]");
+        if(!inp) return;
+        var tr=inp.closest("tr");
+        if(tr) sheetOnChange(m, tr);
+      });
+      body.addEventListener("click", function(e){
+        var del=e.target.closest("[data-sheet-del]");
+        if(del){ sheetDelete(m, del.getAttribute("data-sheet-del")); return; }
+        if(m==="house"){
+          var imgDel=e.target.closest("[data-himg-del]");
+          if(imgDel){ e.stopPropagation(); houseRemoveImage(imgDel.getAttribute("data-himg-del"), parseInt(imgDel.getAttribute("data-idx"),10)); return; }
+          var imgAdd=e.target.closest("[data-himg-add]");
+          if(imgAdd){ houseAddImage(imgAdd.getAttribute("data-himg-add")); return; }
+          var imgView=e.target.closest("[data-himg-view]");
+          if(imgView){
+            var hr=findHouse(imgView.getAttribute("data-himg-view"));
+            var vi=parseInt(imgView.getAttribute("data-idx"),10);
+            if(hr && hr.images && hr.images[vi]) openLightbox(hr.images[vi]);
+          }
+        }
+      });
+      body.addEventListener("keydown", function(e){
+        if(e.key==="Enter" && e.target.closest("[data-k]") && e.target.tagName!=="TEXTAREA"){
+          e.preventDefault(); e.target.blur();
+        }
+      });
+    });
+    // 「添加 +」按钮 → 滚动并聚焦到底部的空白新增行
+    document.querySelectorAll("[data-add-sheet]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var m=btn.getAttribute("data-add-sheet");
+        var body=document.querySelector('[data-sheet-body="'+m+'"]');
+        if(!body) return;
+        var newRow=body.querySelector('tr.sheet-new');
+        if(!newRow){ sheetRender(m); newRow=body.querySelector('tr.sheet-new'); }
+        if(!newRow) return;
+        try{ newRow.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(err){ newRow.scrollIntoView(); }
+        var target=newRow.querySelector('[data-k]:not([data-k="time"])') || newRow.querySelector('[data-k]');
+        if(target){ setTimeout(function(){ try{ target.focus(); }catch(err){} }, 60); }
+      });
+    });
+
+    // 力量训练 table
+    var sBody=document.querySelector("[data-strength-body]");
+    if(sBody){
+      sBody.addEventListener("change", function(e){
+        var el=e.target.closest("[data-f],[data-sk]");
+        if(el) strengthEdit(el);
+      });
+      sBody.addEventListener("click", function(e){
+        var pbtn=e.target.closest("[data-pdrop-btn]");
+        if(pbtn){
+          e.stopPropagation();
+          var dd=pbtn.closest(".pdrop"), wasOpen=dd.classList.contains("open");
+          closeAllPdrops();
+          if(!wasOpen){
+            dd.classList.add("open");
+            var menu=dd.querySelector(".pdrop-menu");
+            if(menu){   // 表格容器 overflow:auto 会裁剪，改用 fixed 定位到按钮下方
+              var rc=pbtn.getBoundingClientRect();
+              menu.style.position="fixed";
+              menu.style.top=(rc.bottom+3)+"px";
+              menu.style.left=rc.left+"px";
+            }
+          }
+          return;
+        }
+        var pt=e.target.closest("[data-part-toggle]");
+        if(pt){ e.stopPropagation(); strengthTogglePart(pt.getAttribute("data-part-toggle"), pt.getAttribute("data-p")); return; }
+        var add=e.target.closest("[data-set-add]");
+        if(add){ strengthAddSet(add.getAttribute("data-set-add"), +add.getAttribute("data-ei")); return; }
+        var del=e.target.closest("[data-set-del]");
+        if(del){ strengthDelSet(del.getAttribute("data-set-del"), +del.getAttribute("data-ei"), +del.getAttribute("data-si")); return; }
+      });
+      sBody.addEventListener("keydown", function(e){
+        if(e.key==="Enter" && e.target.closest("[data-f],[data-sk]")){ e.preventDefault(); e.target.blur(); }
+      });
+    }
+    var addS=document.querySelector("[data-add-strength]");
+    if(addS) addS.addEventListener("click", strengthAddSession);
+
+    // 有氧训练 table
+    var cBody=document.querySelector("[data-cardio-body]");
+    if(cBody){
+      cBody.addEventListener("change", function(e){
+        var el=e.target.closest("[data-cf]");
+        if(el) cardioEdit(el);
+      });
+      cBody.addEventListener("click", function(e){
+        var add=e.target.closest("[data-cardio-add]");
+        if(add){ cardioAdd(); return; }
+        var del=e.target.closest("[data-cardio-del]");
+        if(del){ cardioDelete(del.getAttribute("data-cardio-del")); return; }
+      });
+      cBody.addEventListener("keydown", function(e){
+        if(e.key==="Enter" && e.target.closest("[data-cf]") && e.target.tagName!=="SELECT"){ e.preventDefault(); e.target.blur(); }
+      });
+    }
+    var addC=document.querySelector("[data-add-cardio]");
+    if(addC) addC.addEventListener("click", cardioAdd);
+
+    // stats range pills
+    document.querySelectorAll('[data-pill="statsRange"] .pill').forEach(function(p){
+      p.addEventListener("click", function(){
+        statsRange = p.getAttribute("data-val");
+        document.querySelectorAll('[data-pill="statsRange"] .pill').forEach(function(q){
+          q.classList.toggle("on", q===p);
+        });
+        renderStats();
+      });
+    });
+    // 力量筛选条（部位）
+    var sFilter=document.querySelector('[data-filter="strength"]');
+    if(sFilter){
+      sFilter.addEventListener("click", function(e){
+        var c=e.target.closest(".fchip"); if(!c) return;
+        strengthFilter=c.getAttribute("data-pf")||"";
+        sFilter.querySelectorAll(".fchip").forEach(function(q){ q.classList.toggle("on", q===c); });
+        renderStrength();
+      });
+    }
+    // 有氧筛选条（类型）
+    var cFilter=document.querySelector('[data-filter="cardio"]');
+    if(cFilter){
+      cFilter.addEventListener("click", function(e){
+        var c=e.target.closest(".fchip"); if(!c) return;
+        cardioFilter=c.getAttribute("data-cff")||"";
+        cFilter.querySelectorAll(".fchip").forEach(function(q){ q.classList.toggle("on", q===c); });
+        renderCardio();
+      });
+    }
+    // 柱状图控制：维度 / 单位 / 项目
+    function bindChartPill(pill, setter){
+      document.querySelectorAll('[data-pill="'+pill+'"] .pill').forEach(function(p){
+        p.addEventListener("click", function(){
+          setter(p.getAttribute("data-val"));
+          document.querySelectorAll('[data-pill="'+pill+'"] .pill').forEach(function(q){ q.classList.toggle("on", q===p); });
+          renderStatsChart();
+        });
+      });
+    }
+    bindChartPill("chartUnit", function(v){ chartUnit=v; chartYearSel=null; chartMonthSel=null; });
+    bindChartPill("chartProj", function(v){ chartProj=v; });
+
+    // 日历翻月 / 点选某天（事件委托在左侧日历容器）
+    var statsCal=document.querySelector("[data-stats-cal]");
+    if(statsCal){
+      statsCal.addEventListener("click", function(e){
+        var nav=e.target.closest("[data-cal-nav]");
+        if(nav){
+          var step=parseInt(nav.getAttribute("data-cal-nav"),10)||0;
+          var base=calYM ? new Date(calYM.y, calYM.m, 1) : new Date();
+          base.setMonth(base.getMonth()+step);
+          calYM={ y:base.getFullYear(), m:base.getMonth() };
+          calSelDay=null;
+          renderStatsLeft();
+          return;
+        }
+        var cell=e.target.closest("[data-cal-day]");
+        if(cell){
+          var dd=parseInt(cell.getAttribute("data-cal-day"),10)||0;
+          calSelDay=(calSelDay===dd)?null:dd;   // 再次点击收起
+          renderStatsLeft();
+        }
+      });
+    }
+    // 柱状图点击柱看当区间的运动明细
+    var statsChart=document.querySelector("[data-stats-chart]");
+    if(statsChart){
+      statsChart.addEventListener("click", function(e){
+        var bar=e.target.closest("[data-bar-idx]");
+        if(!bar) return;
+        var sub=bar.closest("[data-bar-scope]");
+        var scope=sub && sub.getAttribute("data-bar-scope");
+        var idx=parseInt(bar.getAttribute("data-bar-idx"),10);
+        if(!(idx>0)) return;
+        if(scope==="year"){ chartYearSel = (chartYearSel===idx) ? null : idx; }
+        else if(scope==="month"){ chartMonthSel = (chartMonthSel===idx) ? null : idx; }
+        renderStatsChart();
+      });
+    }
+    // 点击空白处关闭部位下拉
+    document.addEventListener("click", function(e){
+      if(!e.target.closest(".pdrop")) closeAllPdrops();
+    });
+
+    // profile weight (calorie basis)
+    var wIn=document.querySelector('[data-k="weightKg"]');
+    if(wIn) wIn.addEventListener("change", function(){
+      var w=num(wIn.value);
+      if(w && w>=30 && w<=200){ state.profile.weightKg=w; save(); renderAll(); }
+      else { wIn.value=state.profile.weightKg; }
+    });
+
+    // search
+    document.querySelectorAll("[data-search]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var m=inp.getAttribute("data-search");
+        searchTerms[m]=inp.value.trim();
+        renderModule(m);
+      });
+    });
+
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeModal(); });
+  }
+
+  // ---------- toast ----------
+  var toastTimer;
+  function toast(msg, isErr){
+    var t=document.getElementById("toast");
+    t.textContent=msg; t.classList.toggle("err", !!isErr); t.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+
+  // ---------- init ----------
+  load();
+  migrateHouse();       // drop legacy (pre-v2) house records so they aren't re-synced
+  bind();
+  reconcile();          // migrate legacy rows + drop local duplicates
+  renderAll();
+  initCloud();          // 连接 Supabase（未配置则保持本地模式；连上后再并入 seed）
+})();
+</script>
+</body>
+</html>
