@@ -3620,6 +3620,12 @@
     if(unit==="kcal") return calcCalories(r);
     return distanceKm(r);
   }
+  // 公里模式下,排除没有距离数据的记录（力量训练无距离,不该出现在公里图中）
+  function chartRecordMatch(r){
+    if(r.module!=="sport" || !projMatch(r,chartProj)) return false;
+    if(chartUnit==="km" && !(distanceKm(r)>0)) return false;
+    return true;
+  }
   function renderStatsChart(){
     var box=document.querySelector("[data-stats-chart]");
     if(!box) return;
@@ -3635,7 +3641,7 @@
     // ---- 全年 12 月桶 ----
     var yBuckets=[]; for(var mi=0;mi<12;mi++) yBuckets.push(0);
     state.records.forEach(function(r){
-      if(r.module!=="sport" || !projMatch(r,chartProj)) return;
+      if(!chartRecordMatch(r)) return;
       var d=recDate(r); if(!d || d.getFullYear()!==yy) return;
       yBuckets[d.getMonth()] += chartVal(r, chartUnit);
     });
@@ -3643,7 +3649,7 @@
     var days=new Date(mY,mM+1,0).getDate();
     var dBuckets=[]; for(var di=0;di<days;di++) dBuckets.push(0);
     state.records.forEach(function(r){
-      if(r.module!=="sport" || !projMatch(r,chartProj)) return;
+      if(!chartRecordMatch(r)) return;
       var d=recDate(r); if(!d || d.getFullYear()!==mY || d.getMonth()!==mM) return;
       dBuckets[d.getDate()-1] += chartVal(r, chartUnit);
     });
@@ -3689,7 +3695,7 @@
       var scopeY = isYear ? yy : mY;
       var scopeM = isYear ? (sel-1) : mM;
       var recs = state.records.filter(function(r){
-        if(r.module!=="sport" || !projMatch(r,chartProj)) return false;
+        if(!chartRecordMatch(r)) return false;
         var d=recDate(r); if(!d) return false;
         if(d.getFullYear()!==scopeY) return false;
         if(isYear) return d.getMonth()===scopeM;
