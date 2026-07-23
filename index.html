@@ -571,7 +571,7 @@
  {
   "module": "sport",
   "time": "2026-04-21",
-  "sport": "其他",
+  "sport": "健走",
   "project": "快走4公里"
  },
  {
@@ -636,7 +636,7 @@
  {
   "module": "sport",
   "time": "2026-01-11",
-  "sport": "其他",
+  "sport": "爬山",
   "project": "爬山"
  },
  {
@@ -1872,7 +1872,7 @@
           <span class="fchip" data-cff="跑步">跑步</span>
           <span class="fchip" data-cff="骑行">骑行</span>
           <span class="fchip" data-cff="爬山">爬山</span>
-          <span class="fchip" data-cff="其他">其他</span>
+          <span class="fchip" data-cff="健走">健走</span>
         </div>
         <div class="filter-bar year-tabs" data-year-tabs="cardio"></div>
         <div class="htable-wrap">
@@ -2151,7 +2151,7 @@
 
   var STORE_KEY = "daily-records-v1";
   var MODULES = ["thought","sport","book","house"];
-  var SPORTS = ["游泳","跑步","骑行","爬山","健身","其他"];
+  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走"];
   var CARDIO = ["游泳","跑步","骑行"];
   var WP = window.WorkoutParse;
 
@@ -2276,6 +2276,26 @@
       setTimeout(autoEstimateAll, 800);
     });
   }
+  var _realtimeRenderPending = false;
+  function isUserEditing(){
+    var ae = document.activeElement;
+    if(!ae) return false;
+    return !!(ae.closest && (ae.closest("[data-strength-body]") || ae.closest("[data-cardio-body]") || ae.closest("[data-sheet-body]")));
+  }
+  function realtimeRender(){
+    if(isUserEditing()){
+      if(!_realtimeRenderPending){
+        _realtimeRenderPending = true;
+        document.addEventListener("focusout", function onBlur(){
+          document.removeEventListener("focusout", onBlur);
+          _realtimeRenderPending = false;
+          renderAll();
+        }, { once:true });
+      }
+    }else{
+      renderAll();
+    }
+  }
   function subscribeRealtime(){
     if(!CLOUD_ON) return;
     try{
@@ -2283,12 +2303,12 @@
         .on("postgres_changes", {event:"*", schema:"public", table:"records"}, function(payload){
           if(payload.eventType==="DELETE"){
             var did = payload.old && payload.old.id;
-            if(did){ state.records = state.records.filter(function(x){return x.id!==did;}); save(); renderAll(); }
+            if(did){ state.records = state.records.filter(function(x){return x.id!==did;}); save(); realtimeRender(); }
           }else{
             var r = recFromRow(payload.new);
             var i = state.records.findIndex(function(x){return x.id===r.id;});
             if(i>=0) state.records[i]=r; else state.records.push(r);
-            save(); renderAll();
+            save(); realtimeRender();
           }
         }).subscribe();
     }catch(e){ console.warn("realtime failed", e); }
@@ -2361,6 +2381,7 @@
     if(sp==="游泳") return 8.0;                          // 自由泳中等强度
     if(sp==="爬山") return 6.0;                          // 中强度徒步/登山
     if(sp==="健身") return 5.0;                          // 力量训练中高强度
+    if(sp==="健走") return 4.3;                          // 快走/健步走
     return 4.0;                                          // 其他/一般活动
   }
   // total number of working sets across a strength session's exercises
@@ -2373,12 +2394,23 @@
     return n;
   }
   // effective minutes for the calorie formula: explicit duration wins; otherwise
-  // estimate — strength ≈ 3 min per working set (floor 12), cardio default 30.
+  // estimate — strength ≈ 3 min per working set (floor 12), cardio: derive from distance or 0.
   function estMinutes(r){
     var dur=num(r.duration);
     if(dur!=null && dur>0) return dur;
     if(r.sport==="健身") return Math.max(12, totalSets(r)*3);
-    return 30;
+    // cardio: if distance available, estimate time from typical pace
+    var km=distanceKm(r);
+    if(km>0){
+      var sp=r.sport||"";
+      if(sp==="跑步") return km / 9.6 * 60;        // ~9.6km/h
+      if(sp==="骑行" || sp==="骑车") return km / 20 * 60; // ~20km/h
+      if(sp==="游泳") return km / 2.0 * 60;         // ~2km/h 蛙泳
+      if(sp==="爬山") return km / 4.0 * 60;         // ~4km/h 登山
+      if(sp==="健走") return km / 5.5 * 60;         // ~5.5km/h 快走
+      return km / 5.0 * 60;                          // 通用
+    }
+    return 0;   // 无时长无距离 → 无法估算 → 0
   }
   // pure MET estimate: MET × 3.5 × weightKg / 200 × minutes  (ACSM)
   function autoCalories(r){
@@ -2386,11 +2418,14 @@
     var w = (state.profile && num(state.profile.weightKg)) || DEFAULT_PROFILE.weightKg;
     return Math.round(sportMET(r) * 3.5 * w / 200 * estMinutes(r));
   }
-  // effective calories: a manual override (r.kcal) always wins, else the estimate.
+  // effective calories: strength uses manual/AI override (r.kcal) when available;
+  // cardio always uses the scientific formula.
   function calcCalories(r){
     if(!r || r.module!=="sport") return 0;
-    var man = num(r.kcal);
-    if(man!=null && man>0) return Math.round(man);
+    if(r.sport==="健身"){
+      var man = num(r.kcal);
+      if(man!=null && man>0) return Math.round(man);
+    }
     return autoCalories(r);
   }
 
@@ -2424,18 +2459,14 @@
       + (km>0 ? ("距离约"+km+"公里。") : "")
       + (dur>0 ? ("时长约"+dur+"分钟。") : "");
   }
-  // 判定是否是一条可估算的记录
+  // 判定是否是一条可估算的记录 —— 仅力量训练用 AI
   function aiEligible(r){
     if(!r || r.module!=="sport") return false;
-    if(r.sport==="健身"){
-      var ex = r.exercises||[];
-      return ex.some(function(e){
-        return (e.name||"").trim() || (e.sets||[]).some(function(s){ return s && (s.w!=null || s.r!=null || s.n!=null); });
-      });
-    }
-    // cardio: 有距离或时长即可
-    var km = distanceKm(r), dur = num(r.duration);
-    return (km>0) || (dur>0);
+    if(r.sport!=="健身") return false;   // 有氧用公式，不用 AI
+    var ex = r.exercises||[];
+    return ex.some(function(e){
+      return (e.name||"").trim() || (e.sets||[]).some(function(s){ return s && (s.w!=null || s.r!=null || s.n!=null); });
+    });
   }
   // 更新页面上此条记录的 kcal 只读单元格
   function refreshKcalCell(r){
@@ -2954,8 +2985,8 @@
   var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
   var SPORT_GREEN = "#10b981";
   // 有氧运动 4 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕
-  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","其他"];
-  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "其他":"#94a3b8" };
+  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8" };
   // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
   var LAP_KM = 0.05;
   // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
@@ -2976,7 +3007,7 @@
     if(sp==="骑行" || sp==="骑车") return "骑行";
     var txt=(r.note||"")+"|"+(r.raw||"")+"|"+(r.project||"");
     if(sp==="爬山" || /爬山|登山|徒步|hike/i.test(txt)) return "爬山";
-    return "其他";
+    return "健走";
   }
   var strengthFilter = "";   // 部位筛选（空=全部）
   var cardioFilter = "";     // 类型筛选（空=全部）
@@ -3273,9 +3304,6 @@
       r.raw = "";
     }
     r.updatedAt=Date.now();
-    // 项目/时长/距离/运动类型变化 → 触发 AI 重算 kcal（去抖异步）
-    // 先清掉现值,以免手动值一直占位；AI 完成前用本地估算兜底显示
-    delete r.kcal;
     save(); cloudUpsert(r); renderStats(); updTotal();
     if(needRerender){ renderCardio(); return; }
     // update derived (readonly) cells in place — avoids destroying the (+)/(−)
@@ -3283,7 +3311,6 @@
     var pc=tr.querySelector('[data-cell="pace"]'); if(pc) pc.textContent=cardioPaceStr(r);
     var kc=tr.querySelector('[data-cell="kcal"]');
     if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
-    scheduleAiKcal(r);
   }
   function cardioAdd(refId){
     var refRec = refId ? findSport(refId) : null;
@@ -3546,7 +3573,10 @@
         r2.added=!!state.records[idx].added;
       }
       state.records[idx]=r2;
-      save(); cloudUpsert(r2); renderAfterChange(m);
+      save(); cloudUpsert(r2);
+      // 不立即 re-render 以免改日期后行跳动，刷新页面才重排
+      if(m==="sport") renderStats();
+      document.getElementById("totalCount").textContent="共 "+state.records.length+" 条";
     }
   }
   function sheetDelete(m, id){
@@ -3704,7 +3734,7 @@
     var calBySport = {};
     rows.forEach(function(r){
       var c = calcCalories(r); totalCal += c;
-      var sp = r.sport||"其他";
+      var sp = r.sport||"健走";
       if(!calBySport[sp]) calBySport[sp] = 0;
       calBySport[sp] += c;
       if(r.sport==="健身"){
@@ -3720,7 +3750,7 @@
         var mins = num(r.duration)||0;
         if(mins>0){
           cardioTotalDur += mins;
-          var k = cardioKind(r)||"其他";
+          var k = cardioKind(r)||"健走";
           cardioDurByKind[k] = (cardioDurByKind[k]||0) + mins;
         }
       }
@@ -3755,7 +3785,7 @@
       var calChips = SPORTS.map(function(sp){
         var c = calBySport[sp]||0; if(!(c>0)) return "";
         var color = (sp==="健身") ? "#7c3aed"
-                  : (CARDIO_COLORS[cardioKind({sport:sp})||"其他"]||SPORT_GREEN);
+                  : (CARDIO_COLORS[cardioKind({sport:sp})||"健走"]||SPORT_GREEN);
         return '<span class="ov-chip"><i style="background:'+color+'"></i>'+esc(sp)+' '+c.toLocaleString()+'</span>';
       }).filter(function(x){return x;}).join("");
       var calBlock = '<div class="ov-block">'
@@ -3773,7 +3803,7 @@
     if(proj==="all") return true;
     if(proj==="力量") return r.sport==="健身";
     if(proj==="骑行") return r.sport==="骑行" || r.sport==="骑车";
-    if(proj==="爬山") return r.sport==="爬山" || (r.sport==="其他" && /爬山|登山|徒步|hike/i.test((r.note||"")+(r.raw||"")));
+    if(proj==="爬山") return r.sport==="爬山" || (r.sport==="健走" && /爬山|登山|徒步|hike/i.test((r.note||"")+(r.raw||"")));
     return r.sport===proj;   // 跑步 / 游泳
   }
   function chartVal(r, unit){
@@ -3889,7 +3919,7 @@
         pieces.push({ t:g.t, html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
       });
       cardioRecs.forEach(function(r){
-        var k = cardioKind(r)||"其他";
+        var k = cardioKind(r)||"健走";
         var ccolor = CARDIO_COLORS[k];
         var label = r.sport||k;
         var badgesHTML = '<span class="bd-badge" style="background:'+ccolor+'">'+esc(label)+'</span>';
@@ -3933,7 +3963,7 @@
     var s = PARTS_ALL.map(function(p){ return '<span><i style="background:'+PART_COLORS[p]+'"></i>'+p+'</span>'; }).join("");
     s += '<span><i style="background:#94a3b8"></i>力量(未分部位)</span>';
     if(withCardio){
-      s += CARDIO_KINDS.filter(function(k){return k!=="其他";}).map(function(k){
+      s += CARDIO_KINDS.map(function(k){
         return '<span><i style="background:'+CARDIO_COLORS[k]+'"></i>'+k+'</span>';
       }).join("");
     }
@@ -3950,7 +3980,7 @@
       var key=d.getDate();
       if(!map[key]) map[key]={ parts:{}, gym:false, cardio:{} };
       if(r.sport==="健身"){ map[key].gym=true; (r.parts||[]).forEach(function(p){ map[key].parts[p]=true; }); }
-      else { var k=cardioKind(r)||"其他"; map[key].cardio[k]=true; }
+      else { var k=cardioKind(r)||"健走"; map[key].cardio[k]=true; }
     });
     var firstDow=new Date(y,m,1).getDay();      // 0=Sun
     var days=new Date(y,m+1,0).getDate();
@@ -4019,7 +4049,7 @@
       rows += '<div class="cd-row">'+badges+'<span class="cd-body">'+esc(body)+'</span></div>';
     }
     rows += cardioRecs.map(function(r){
-      var k = cardioKind(r)||"其他";
+      var k = cardioKind(r)||"健走";
       var ccolor = CARDIO_COLORS[k];
       var bits=[];
       if(r.distance!=null) bits.push(r.distance+(r.distUnit||""));
