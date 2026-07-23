@@ -271,9 +271,10 @@
   .cal-legend{display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--muted)}
   .cal-legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle}
 
-  /* house image column — thumbnails (2/3 of previous size: 160 → 108 px per side) */
-  table.htable td.himg-cell{white-space:normal; min-width:240px; padding:8px 10px; vertical-align:middle}
-  .himgs{display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap}
+  /* house image column — thumbnails (2/3 of previous size: 160 → 108 px per side)
+     用户要求：图片单行横排, 有几张展示几张, 不折不隐; 数量多时随 .htable-wrap 水平滚动 */
+  table.htable td.himg-cell{white-space:nowrap; min-width:240px; padding:8px 10px; vertical-align:middle}
+  .himgs{display:flex; gap:10px; align-items:flex-start; flex-wrap:nowrap}
   .himg-wrap{display:flex; flex-direction:column; align-items:stretch; gap:5px; width:108px}
   .himg{position:relative; width:108px; height:108px; border-radius:10px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
   .himg img{width:100%; height:100%; object-fit:cover; display:block}
