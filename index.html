@@ -146,20 +146,20 @@
   table.htable td.parts-cell .hc.hc-ta, table.htable td .hc.hc-ta{vertical-align:top}
 
   /* Compact/preview mode for long-text house columns:
-     collapsed to a single ellipsis line by default,
-     expanded to a full editable multiline area only when focused. */
-  table.htable td.col-district{min-width:80px; max-width:120px; width:100px}
-  table.htable td.col-metro   {min-width:100px; max-width:180px; width:140px}
-  table.htable td.col-school  {min-width:100px; max-width:180px; width:140px}
-  table.htable td.col-adv, table.htable td.col-dis{min-width:220px; max-width:340px; width:260px}
-  table.htable td.col-remark {min-width:140px; max-width:260px; width:200px}
+     wraps within a fixed multi-line row height by default,
+     expands to a full editable multiline area only when focused. */
+  table.htable td.col-district{min-width:56px;  max-width:96px;  width:70px}
+  table.htable td.col-metro   {min-width:70px;  max-width:120px; width:88px}
+  table.htable td.col-school  {min-width:80px;  max-width:140px; width:100px}
+  table.htable td.col-adv, table.htable td.col-dis{min-width:150px; max-width:240px; width:180px}
+  table.htable td.col-remark {min-width:110px; max-width:200px; width:140px}
   table.htable td .hc.hc-ta.hc-clip{
-    white-space:nowrap; word-break:normal; overflow:hidden; text-overflow:ellipsis;
-    height:32px !important; min-height:32px; max-height:32px;
-    padding-top:8px; padding-bottom:8px;
+    white-space:pre-wrap; word-break:break-word; overflow:hidden;
+    height:62px !important; min-height:62px; max-height:62px;
+    padding-top:6px; padding-bottom:6px; line-height:1.4;
   }
   table.htable td .hc.hc-ta.hc-clip:focus{
-    white-space:pre-wrap; word-break:break-word; overflow:auto; text-overflow:clip;
+    overflow:auto;
     min-height:96px; max-height:240px; height:auto !important;
     position:relative; z-index:5;
     background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35);
@@ -271,20 +271,20 @@
   .cal-legend{display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--muted)}
   .cal-legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle}
 
-  /* house image column — thumbnails enlarged 4× (40 → 160 px per side) */
-  table.htable td.himg-cell{white-space:normal; min-width:360px; padding:10px 12px; vertical-align:middle}
-  .himgs{display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap}
-  .himg-wrap{display:flex; flex-direction:column; align-items:stretch; gap:6px; width:160px}
-  .himg{position:relative; width:160px; height:160px; border-radius:12px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
+  /* house image column — thumbnails (2/3 of previous size: 160 → 108 px per side) */
+  table.htable td.himg-cell{white-space:normal; min-width:240px; padding:8px 10px; vertical-align:middle}
+  .himgs{display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap}
+  .himg-wrap{display:flex; flex-direction:column; align-items:stretch; gap:5px; width:108px}
+  .himg{position:relative; width:108px; height:108px; border-radius:10px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
   .himg img{width:100%; height:100%; object-fit:cover; display:block}
-  .himg .himg-x{position:absolute; top:4px; right:4px; background:rgba(0,0,0,.6); color:#fff; border:none;
-    font-size:14px; line-height:1; padding:4px 7px; cursor:pointer; border-radius:6px; opacity:0}
+  .himg .himg-x{position:absolute; top:3px; right:3px; background:rgba(0,0,0,.6); color:#fff; border:none;
+    font-size:12px; line-height:1; padding:3px 6px; cursor:pointer; border-radius:6px; opacity:0}
   .himg:hover .himg-x{opacity:1}
-  .himg-note{width:160px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; font-size:12px; color:var(--ink); text-align:center; box-sizing:border-box}
+  .himg-note{width:108px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:#fff; font-size:11px; color:var(--ink); text-align:center; box-sizing:border-box}
   .himg-note:focus{outline:none; border-color:var(--house); background:#fff}
   .himg-note::placeholder{color:var(--muted); opacity:.7}
-  .himg-add{width:160px; height:160px; border:1px dashed var(--line-strong); border-radius:12px; background:#f7f9ff;
-    color:#8aa0c8; font-size:56px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+  .himg-add{width:108px; height:108px; border:1px dashed var(--line-strong); border-radius:10px; background:#f7f9ff;
+    color:#8aa0c8; font-size:40px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
   .himg-add:hover{background:#eef4ff; color:var(--house)}
   .himg-hint{color:var(--muted); font-size:12px}
 
@@ -1985,6 +1985,7 @@
                 <th>缺点</th>
                 <th>备注</th>
                 <th>图片</th>
+                <th style="width:52px">操作</th>
               </tr>
             </thead>
             <tbody data-sheet-body="house"></tbody>
@@ -3461,7 +3462,7 @@
       var step=(col.type==="num")?' step="any"':'';
       inner='<input class="hc" type="'+itype+'"'+step+' data-k="'+k+'" value="'+esc(val)+'"'+ph+'>';
     }
-    if(k==="time" && r){
+    if(k==="time" && r && m!=="house"){
       inner += '<button type="button" class="row-del" data-sheet-del="'+esc(r.id)+'" title="删除本行">&#10005;</button>';
     }
     return '<td'+(tdcls?(' class="'+tdcls+'"'):'')+'>'+inner+'</td>';
@@ -3469,11 +3470,18 @@
   function sheetRowHTML(m, r, cols){
     var tds=cols.map(function(c){ return sheetCellHTML(m,c,r,false); }).join("");
     if(m==="house") tds+=houseImageCellHTML(r);
+    if(m==="house"){
+      tds+='<td class="rowact">'
+         +   '<button type="button" class="mini-btn plus"  data-house-add="'+esc(r.id)+'" title="上方加一行">+</button>'
+         +   '<button type="button" class="mini-btn minus" data-house-del="'+esc(r.id)+'" title="删除本行">&minus;</button>'
+         + '</td>';
+    }
     return '<tr data-id="'+esc(r.id)+'">'+tds+'</tr>';
   }
   function sheetNewRowHTML(m, cols){
     var tds=cols.map(function(c){ return sheetCellHTML(m,c,null,true); }).join("");
     if(m==="house") tds+=houseImageCellHTML(null);
+    if(m==="house") tds+='<td class="rowact"></td>';
     return '<tr class="sheet-new" data-new="1">'+tds+'</tr>';
   }
   function houseImageCellHTML(r){
@@ -3578,6 +3586,31 @@
     };
     reader.onerror=function(){ cb(null); };
     reader.readAsDataURL(file);
+  }
+  function houseAddRow(refId){
+    var ref = refId ? findHouse(refId) : null;
+    var t = ref ? ref.time : (function(){
+      var d=new Date();
+      return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+    })();
+    var r = {
+      id: uid(), module: "house", v: 2,
+      time: t,
+      community:"", district:"", metro:"", propType:"",
+      school:"", year:null, area:null,
+      totalPrice:null, unitPrice:null, downPay:null,
+      advantage:"", disadvantage:"", idea:"", remark:"",
+      images: [], added: true,
+      seq: nextHouseSeq(),
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+    state.records.push(r);
+    save(); cloudUpsert(r); sheetRender("house");
+    setTimeout(function(){
+      var focusCell=document.querySelector('[data-sheet-body="house"] tr[data-id="'+r.id+'"] [data-k="community"]');
+      if(focusCell){ try{ focusCell.focus(); }catch(err){} }
+    }, 60);
+    toast("已在上方新增一行");
   }
   function houseAddImage(id){
     var r=findHouse(id); if(!r) return;
@@ -4078,6 +4111,10 @@
         var del=e.target.closest("[data-sheet-del]");
         if(del){ sheetDelete(m, del.getAttribute("data-sheet-del")); return; }
         if(m==="house"){
+          var rowAdd=e.target.closest("[data-house-add]");
+          if(rowAdd){ houseAddRow(rowAdd.getAttribute("data-house-add")); return; }
+          var rowDel=e.target.closest("[data-house-del]");
+          if(rowDel){ sheetDelete("house", rowDel.getAttribute("data-house-del")); return; }
           var imgDel=e.target.closest("[data-himg-del]");
           if(imgDel){ e.stopPropagation(); houseRemoveImage(imgDel.getAttribute("data-himg-del"), parseInt(imgDel.getAttribute("data-idx"),10)); return; }
           var imgAdd=e.target.closest("[data-himg-add]");
