@@ -251,23 +251,29 @@
   .cal-legend{display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--muted)}
   .cal-legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle}
 
-  /* house image column */
-  table.htable td.himg-cell{white-space:normal; min-width:132px; padding:5px 8px; vertical-align:middle}
-  .himgs{display:flex; gap:5px; align-items:center; flex-wrap:wrap}
-  .himg{position:relative; width:40px; height:40px; border-radius:7px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
+  /* house image column — thumbnails enlarged 4× (40 → 160 px per side) */
+  table.htable td.himg-cell{white-space:normal; min-width:360px; padding:10px 12px; vertical-align:middle}
+  .himgs{display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap}
+  .himg-wrap{display:flex; flex-direction:column; align-items:stretch; gap:6px; width:160px}
+  .himg{position:relative; width:160px; height:160px; border-radius:12px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex:0 0 auto}
   .himg img{width:100%; height:100%; object-fit:cover; display:block}
-  .himg .himg-x{position:absolute; top:0; right:0; background:rgba(0,0,0,.55); color:#fff; border:none;
-    font-size:9px; line-height:1; padding:1px 3px; cursor:pointer; border-bottom-left-radius:6px; opacity:0}
+  .himg .himg-x{position:absolute; top:4px; right:4px; background:rgba(0,0,0,.6); color:#fff; border:none;
+    font-size:14px; line-height:1; padding:4px 7px; cursor:pointer; border-radius:6px; opacity:0}
   .himg:hover .himg-x{opacity:1}
-  .himg-add{width:40px; height:40px; border:1px dashed var(--line-strong); border-radius:7px; background:#f7f9ff;
-    color:#8aa0c8; font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+  .himg-note{width:160px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; font-size:12px; color:var(--ink); text-align:center; box-sizing:border-box}
+  .himg-note:focus{outline:none; border-color:var(--house); background:#fff}
+  .himg-note::placeholder{color:var(--muted); opacity:.7}
+  .himg-add{width:160px; height:160px; border:1px dashed var(--line-strong); border-radius:12px; background:#f7f9ff;
+    color:#8aa0c8; font-size:56px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
   .himg-add:hover{background:#eef4ff; color:var(--house)}
   .himg-hint{color:var(--muted); font-size:12px}
 
   /* image lightbox */
   #imgLightbox{position:fixed; inset:0; background:rgba(15,18,30,.82); display:none; align-items:center; justify-content:center; z-index:200; padding:24px; cursor:zoom-out}
-  #imgLightbox.on{display:flex}
-  #imgLightbox img{max-width:92%; max-height:92%; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  #imgLightbox.on{display:flex; flex-direction:column}
+  #imgLightbox img{max-width:92%; max-height:82%; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  #imgLightbox .lb-note{color:#fff; margin-top:14px; font-size:16px; text-align:center; max-width:90%; opacity:.9}
+  #imgLightbox .lb-note:empty{display:none}
 
   /* Exercise detail (structured strength training) */
   .ex-table{width:100%; border-collapse:collapse; font-size:13px}
@@ -2767,8 +2773,18 @@
       r.unitPrice=num(rec.unitPrice);
       if(r.unitPrice==null && r.area && r.totalPrice) r.unitPrice=Math.round(r.totalPrice*10000/r.area);
       r.downPay=num(rec.downPay);
+      r.advantage=rec.advantage?String(rec.advantage).trim():"";
+      r.disadvantage=rec.disadvantage?String(rec.disadvantage).trim():"";
+      r.idea=rec.idea?String(rec.idea).trim():"";
       r.remark=rec.remark?String(rec.remark).trim():"";
-      r.images = Array.isArray(rec.images) ? rec.images.filter(function(s){ return typeof s==="string" && s; }) : [];
+      // images: 兼容旧格式(string[])与新格式({src,note}[])
+      r.images = Array.isArray(rec.images) ? rec.images.map(function(x){
+        if(typeof x==="string" && x) return {src:x, note:""};
+        if(x && typeof x==="object" && typeof x.src==="string" && x.src){
+          return {src:x.src, note:x.note?String(x.note).trim():""};
+        }
+        return null;
+      }).filter(Boolean) : [];
       r.added = !!rec.added;
       r.v=2;
       r.seq=num(rec.seq);
@@ -3388,7 +3404,7 @@
       o.community=c.community; o.district=c.district; o.metro=c.metro;
       o.year=c.year; o.school=c.school; o.area=c.area; o.totalPrice=c.totalPrice;
       o.unitPrice=c.unitPrice; o.downPay=c.downPay;
-      o.advantage=c.advantage; o.disadvantage=c.disadvantage; o.remark=c.remark;
+      o.advantage=c.advantage; o.disadvantage=c.disadvantage; o.idea=c.idea; o.remark=c.remark;
     }
     return o;
   }
@@ -3433,8 +3449,14 @@
   function houseImageCellHTML(r){
     if(!r) return '<td class="himg-cell"><span class="himg-hint">保存后可加图</span></td>';
     var imgs=r.images||[];
-    var thumbs=imgs.map(function(src,i){
-      return '<span class="himg" data-himg-view="'+esc(r.id)+'" data-idx="'+i+'"><img src="'+esc(src)+'" alt="房图"><button type="button" class="himg-x" data-himg-del="'+esc(r.id)+'" data-idx="'+i+'" title="移除">&#10005;</button></span>';
+    var thumbs=imgs.map(function(item,i){
+      var src="", note="";
+      if(typeof item==="string"){ src=item; }
+      else if(item && typeof item==="object"){ src=item.src||""; note=item.note||""; }
+      return '<div class="himg-wrap">'
+           +   '<span class="himg" data-himg-view="'+esc(r.id)+'" data-idx="'+i+'"><img src="'+esc(src)+'" alt="房图"><button type="button" class="himg-x" data-himg-del="'+esc(r.id)+'" data-idx="'+i+'" title="移除">&#10005;</button></span>'
+           +   '<input type="text" class="himg-note" data-himg-note="'+esc(r.id)+'" data-idx="'+i+'" placeholder="备注 (如卧室)" value="'+esc(note)+'">'
+           + '</div>';
     }).join("");
     return '<td class="himg-cell"><div class="himgs">'+thumbs+'<button type="button" class="himg-add" data-himg-add="'+esc(r.id)+'" title="插入图片">+</button></div></td>';
   }
@@ -3538,7 +3560,7 @@
       var pending=files.length;
       files.forEach(function(f){
         resizeImageFile(f, function(dataUrl){
-          if(dataUrl) r.images.push(dataUrl);
+          if(dataUrl) r.images.push({src:dataUrl, note:""});
           if(--pending===0){
             r.updatedAt=Date.now();
             save(); cloudUpsert(r); sheetRender("house"); toast("已插入图片");
@@ -3555,17 +3577,31 @@
     r.updatedAt=Date.now();
     save(); cloudUpsert(r); sheetRender("house");
   }
-  function openLightbox(src){
+  function houseUpdateImageNote(id, idx, note){
+    var r=findHouse(id); if(!r || !Array.isArray(r.images)) return;
+    if(idx<0 || idx>=r.images.length) return;
+    var item = r.images[idx];
+    if(typeof item === "string"){ item = {src:item, note:""}; r.images[idx] = item; }
+    else if(!item || typeof item !== "object" || typeof item.src !== "string"){ return; }
+    var next = String(note==null?"":note).trim();
+    if((item.note||"") === next) return;
+    item.note = next;
+    r.updatedAt=Date.now();
+    save(); cloudUpsert(r);
+  }
+  function openLightbox(src, note){
     if(!src) return;
     var box=document.getElementById("imgLightbox");
     if(!box){
       box=document.createElement("div");
       box.id="imgLightbox";
-      box.innerHTML='<img alt="房图预览">';
+      box.innerHTML='<img alt="房图预览"><div class="lb-note"></div>';
       box.addEventListener("click", function(){ box.classList.remove("on"); });
       document.body.appendChild(box);
     }
     box.querySelector("img").src=src;
+    var noteEl = box.querySelector(".lb-note");
+    if(noteEl) noteEl.textContent = note ? String(note) : "";
     box.classList.add("on");
   }
 
@@ -4007,16 +4043,30 @@
           if(imgDel){ e.stopPropagation(); houseRemoveImage(imgDel.getAttribute("data-himg-del"), parseInt(imgDel.getAttribute("data-idx"),10)); return; }
           var imgAdd=e.target.closest("[data-himg-add]");
           if(imgAdd){ houseAddImage(imgAdd.getAttribute("data-himg-add")); return; }
+          // clicks inside the note input should not open the lightbox
+          if(e.target.closest("[data-himg-note]")) return;
           var imgView=e.target.closest("[data-himg-view]");
           if(imgView){
             var hr=findHouse(imgView.getAttribute("data-himg-view"));
             var vi=parseInt(imgView.getAttribute("data-idx"),10);
-            if(hr && hr.images && hr.images[vi]) openLightbox(hr.images[vi]);
+            if(hr && hr.images && hr.images[vi]){
+              var it = hr.images[vi];
+              if(typeof it === "string") openLightbox(it, "");
+              else openLightbox(it.src||"", it.note||"");
+            }
           }
         }
       });
+      // 图片备注：blur 或按 Enter 时保存
+      body.addEventListener("change", function(e){
+        var note=e.target.closest && e.target.closest("[data-himg-note]");
+        if(m==="house" && note){
+          e.stopPropagation();
+          houseUpdateImageNote(note.getAttribute("data-himg-note"), parseInt(note.getAttribute("data-idx"),10), note.value);
+        }
+      });
       body.addEventListener("keydown", function(e){
-        if(e.key==="Enter" && e.target.closest("[data-k]") && e.target.tagName!=="TEXTAREA"){
+        if(e.key==="Enter" && e.target && (e.target.closest("[data-k]") || e.target.closest("[data-himg-note]")) && e.target.tagName!=="TEXTAREA"){
           e.preventDefault(); e.target.blur();
         }
       });
