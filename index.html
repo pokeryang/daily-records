@@ -144,6 +144,26 @@
     white-space:pre-wrap; word-break:break-word; min-height:32px;
   }
   table.htable td.parts-cell .hc.hc-ta, table.htable td .hc.hc-ta{vertical-align:top}
+
+  /* Compact/preview mode for long-text house columns:
+     collapsed to a single ellipsis line by default,
+     expanded to a full editable multiline area only when focused. */
+  table.htable td.col-district{min-width:80px; max-width:120px; width:100px}
+  table.htable td.col-metro   {min-width:100px; max-width:180px; width:140px}
+  table.htable td.col-school  {min-width:100px; max-width:180px; width:140px}
+  table.htable td.col-adv, table.htable td.col-dis{min-width:220px; max-width:340px; width:260px}
+  table.htable td.col-remark {min-width:140px; max-width:260px; width:200px}
+  table.htable td .hc.hc-ta.hc-clip{
+    white-space:nowrap; word-break:normal; overflow:hidden; text-overflow:ellipsis;
+    height:32px !important; min-height:32px; max-height:32px;
+    padding-top:8px; padding-bottom:8px;
+  }
+  table.htable td .hc.hc-ta.hc-clip:focus{
+    white-space:pre-wrap; word-break:break-word; overflow:auto; text-overflow:clip;
+    min-height:96px; max-height:240px; height:auto !important;
+    position:relative; z-index:5;
+    background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35);
+  }
   @media(max-width:760px){
     .htable-wrap{-webkit-overflow-scrolling:touch}
     table.htable.strength{min-width:600px}
@@ -3285,6 +3305,12 @@
   // 自适应高度的多行单元格（文本列 / 动作名）：内容多少就撑多高，手机上也能看全
   function autoGrowTextarea(el){
     if(!el || el.tagName!=="TEXTAREA") return;
+    // Compact/preview columns (hc-clip): only auto-grow while the user is editing them.
+    // Otherwise wipe the inline height so the CSS single-line clamp takes over.
+    if(el.classList && el.classList.contains("hc-clip") && document.activeElement!==el){
+      el.style.height="";
+      return;
+    }
     el.style.height="auto";
     el.style.height=(el.scrollHeight)+"px";
   }
@@ -3331,18 +3357,18 @@
     ],
     house: [
       {k:"time",         type:"time"},
-      {k:"district",     type:"text"},
-      {k:"metro",        type:"text"},
+      {k:"district",     type:"text", cls:"col-district", clip:true},
+      {k:"metro",        type:"text", cls:"col-metro",    clip:true},
       {k:"community",    type:"text", cls:"col-comm"},
       {k:"year",         type:"num"},
-      {k:"school",       type:"text"},
+      {k:"school",       type:"text", cls:"col-school",   clip:true},
       {k:"area",         type:"num"},
       {k:"totalPrice",   type:"num"},
       {k:"unitPrice",    type:"num"},
       {k:"downPay",      type:"num"},
-      {k:"advantage",    type:"text"},
-      {k:"disadvantage", type:"text"},
-      {k:"remark",       type:"text"}
+      {k:"advantage",    type:"text", cls:"col-adv",      clip:true},
+      {k:"disadvantage", type:"text", cls:"col-dis",      clip:true},
+      {k:"remark",       type:"text", cls:"col-remark",   clip:true}
     ]
   };
 
@@ -3425,7 +3451,8 @@
         + col.opts.map(function(o){ return '<option value="'+esc(o)+'"'+(String(val)===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("")
         + '</select>';
     }else if(col.type==="text"){
-      inner='<textarea class="hc hc-ta" rows="1" data-k="'+k+'"'+ph+'>'+esc(val)+'</textarea>';
+      var taCls = "hc hc-ta" + (col.clip ? " hc-clip" : "");
+      inner='<textarea class="'+taCls+'" rows="1" data-k="'+k+'"'+ph+'>'+esc(val)+'</textarea>';
     }else{
       var itype=(col.type==="num")?"number":"text";
       var step=(col.type==="num")?' step="any"':'';
@@ -4034,6 +4061,15 @@
       });
       body.addEventListener("input", function(e){
         if(e.target && e.target.classList && e.target.classList.contains("hc-ta")) autoGrowTextarea(e.target);
+      });
+      // Compact/preview columns: expand on focus, collapse on blur.
+      body.addEventListener("focusin", function(e){
+        var t=e.target;
+        if(t && t.classList && t.classList.contains("hc-clip")) autoGrowTextarea(t);
+      });
+      body.addEventListener("focusout", function(e){
+        var t=e.target;
+        if(t && t.classList && t.classList.contains("hc-clip")) t.style.height="";
       });
       body.addEventListener("click", function(e){
         var del=e.target.closest("[data-sheet-del]");
