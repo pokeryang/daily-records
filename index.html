@@ -3225,7 +3225,7 @@
       + '<td><input class="hc" data-cf="dist" value="'+esc(distTxt)+'"></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
       + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
-      + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="新增一条">+</button>'
+      + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="上方加一行">+</button>'
         + '<button type="button" class="mini-btn minus" data-cardio-del="'+esc(r.id)+'" title="删除">&minus;</button></td>'
       + '</tr>';
   }
@@ -3284,8 +3284,11 @@
     if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
     scheduleAiKcal(r);
   }
-  function cardioAdd(){
-    var r=validate({ module:"sport", sport:"跑步", time:todayStr(), project:"" });
+  function cardioAdd(refId){
+    var refRec = refId ? findSport(refId) : null;
+    var t = refRec ? refRec.time : todayStr();
+    var sp = refRec ? refRec.sport : "跑步";
+    var r=validate({ module:"sport", sport:sp, time:t, project:"" });
     if(!r) return;
     r.id=uid(); r.createdAt=Date.now();
     state.records.push(r);
@@ -4178,7 +4181,7 @@
       });
       cBody.addEventListener("click", function(e){
         var add=e.target.closest("[data-cardio-add]");
-        if(add){ cardioAdd(); return; }
+        if(add){ cardioAdd(add.getAttribute("data-cardio-add")); return; }
         var del=e.target.closest("[data-cardio-del]");
         if(del){ cardioDelete(del.getAttribute("data-cardio-del")); return; }
       });
