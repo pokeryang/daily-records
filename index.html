@@ -1914,13 +1914,14 @@
               <tr>
                 <th style="width:150px">时间</th>
                 <th>内容</th>
+                <th style="width:52px">操作</th>
               </tr>
             </thead>
             <tbody data-sheet-body="thought"></tbody>
           </table>
         </div>
         <button type="button" class="sheet-add" data-add-sheet="thought">添加 +</button>
-        <div class="hint" style="margin-top:8px">点「添加 +」新增，或直接在最下方浅蓝空行填写；单元格失焦即自动保存并同步云端；鼠标移到某行、点「时间」格右侧的 × 删除。</div>
+        <div class="hint" style="margin-top:8px">点「添加 +」或行内「+」在上方插入一行；单元格失焦即自动保存并同步云端；点行内「−」删除本行。</div>
       </div>
     </section>
 
@@ -1946,13 +1947,14 @@
                 <th style="width:70px">止页</th>
                 <th style="width:60px">本次页数</th>
                 <th>心得</th>
+                <th style="width:52px">操作</th>
               </tr>
             </thead>
             <tbody data-sheet-body="book"></tbody>
           </table>
         </div>
         <button type="button" class="sheet-add" data-add-sheet="book">添加 +</button>
-        <div class="hint" style="margin-top:8px">点「添加 +」新增，或填最下空行即新增；「本次页数」由起页/止页自动算；失焦自动保存并同步。</div>
+        <div class="hint" style="margin-top:8px">点「添加 +」或行内「+」在上方插入一行；「本次页数」由起页/止页自动算；失焦自动保存并同步；点行内「−」删除本行。</div>
       </div>
     </section>
 
@@ -3478,7 +3480,10 @@
     if(k==="time") tdcls=(tdcls?tdcls+" ":"")+"tcell";
     var ph = col.ph ? (' placeholder="'+esc(col.ph)+'"') : '';
     var inner;
-    if(col.type==="select"){
+    if(k==="time" && m!=="house"){
+      // 思考/读书：日期组件，只到日（不记录几点钟）
+      inner='<input class="hc" type="date" data-k="time" value="'+esc(String(val).slice(0,10))+'"'+ph+'>';
+    }else if(col.type==="select"){
       inner='<select class="hc" data-k="'+k+'"><option value=""></option>'
         + col.opts.map(function(o){ return '<option value="'+esc(o)+'"'+(String(val)===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("")
         + '</select>';
@@ -3490,9 +3495,6 @@
       var step=(col.type==="num")?' step="any"':'';
       inner='<input class="hc" type="'+itype+'"'+step+' data-k="'+k+'" value="'+esc(val)+'"'+ph+'>';
     }
-    if(k==="time" && r && m!=="house"){
-      inner += '<button type="button" class="row-del" data-sheet-del="'+esc(r.id)+'" title="删除本行">&#10005;</button>';
-    }
     return '<td'+(tdcls?(' class="'+tdcls+'"'):'')+'>'+inner+'</td>';
   }
   function sheetRowHTML(m, r, cols){
@@ -3503,13 +3505,18 @@
          +   '<button type="button" class="mini-btn plus"  data-house-add="'+esc(r.id)+'" title="上方加一行">+</button>'
          +   '<button type="button" class="mini-btn minus" data-house-del="'+esc(r.id)+'" title="删除本行">&minus;</button>'
          + '</td>';
+    }else if(m==="thought" || m==="book"){
+      tds+='<td class="rowact">'
+         +   '<button type="button" class="mini-btn plus"  data-sheet-add="'+esc(r.id)+'" title="上方加一行">+</button>'
+         +   '<button type="button" class="mini-btn minus" data-sheet-del="'+esc(r.id)+'" title="删除本行">&minus;</button>'
+         + '</td>';
     }
     return '<tr data-id="'+esc(r.id)+'">'+tds+'</tr>';
   }
   function sheetNewRowHTML(m, cols){
     var tds=cols.map(function(c){ return sheetCellHTML(m,c,null,true); }).join("");
     if(m==="house") tds+=houseImageCellHTML(null);
-    if(m==="house") tds+='<td class="rowact"></td>';
+    if(m==="house" || m==="thought" || m==="book") tds+='<td class="rowact"></td>';
     return '<tr class="sheet-new" data-new="1">'+tds+'</tr>';
   }
   function houseImageCellHTML(r){
@@ -3640,6 +3647,21 @@
     setTimeout(function(){
       var focusCell=document.querySelector('[data-sheet-body="house"] tr[data-id="'+r.id+'"] [data-k="community"]');
       if(focusCell){ try{ focusCell.focus(); }catch(err){} }
+    }, 60);
+    toast("已在上方新增一行");
+  }
+  function sheetAddRow(m, refId){
+    var ref = refId ? state.records.filter(function(x){ return x.id===refId; })[0] : null;
+    var t = (ref && ref.time) ? String(ref.time).slice(0,10) : todayStr();
+    var r = { id: uid(), module: m, time: t, createdAt: Date.now(), updatedAt: Date.now() };
+    if(m==="thought"){ r.content=""; }
+    else if(m==="book"){ r.book=""; r.fromPage=null; r.toPage=null; r.pagesRead=null; r.note=""; }
+    state.records.push(r);
+    save(); cloudUpsert(r); sheetRender(m);
+    setTimeout(function(){
+      var fk = (m==="book") ? "book" : "content";
+      var cell=document.querySelector('[data-sheet-body="'+m+'"] tr[data-id="'+r.id+'"] [data-k="'+fk+'"]');
+      if(cell){ try{ cell.focus(); }catch(err){} }
     }, 60);
     toast("已在上方新增一行");
   }
@@ -4141,6 +4163,8 @@
       body.addEventListener("click", function(e){
         var del=e.target.closest("[data-sheet-del]");
         if(del){ sheetDelete(m, del.getAttribute("data-sheet-del")); return; }
+        var addAbove=e.target.closest("[data-sheet-add]");
+        if(addAbove){ sheetAddRow(m, addAbove.getAttribute("data-sheet-add")); return; }
         if(m==="house"){
           var rowAdd=e.target.closest("[data-house-add]");
           if(rowAdd){ houseAddRow(rowAdd.getAttribute("data-house-add")); return; }
