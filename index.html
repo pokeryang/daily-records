@@ -1758,6 +1758,7 @@
     <div class="spacer"></div>
     <div class="tools">
       <span id="cloudStatus" title="云同步状态" style="display:inline-flex;align-items:center;font-size:12px;font-weight:700;color:#7a8194;margin-right:4px">● 本地模式</span>
+      <button class="btn ghost" id="btnKey" title="输入或切换云同步密钥（与记账助手/工资测算等应用共用同一把密钥）">解锁/切换密钥</button>
       <button class="btn ghost" id="btnImport">导入 JSON</button>
       <button class="btn" id="btnExport">导出备份</button>
     </div>
@@ -4142,6 +4143,15 @@
   // ---------- wire up ----------
   function bind(){
     document.getElementById("btnExport").addEventListener("click", doExport);
+    var keyBtn=document.getElementById("btnKey");
+    if(keyBtn) keyBtn.addEventListener("click", function(){
+      var cur=""; try{ cur=localStorage.getItem(SECRET_STORE_KEY)||""; }catch(e){}
+      var v=window.prompt("输入云同步密钥（与记账助手/工资测算等应用共用同一把密钥）；留空则清除并转本地模式：", cur);
+      if(v===null) return; // 取消
+      v=v.trim();
+      try{ if(v) localStorage.setItem(SECRET_STORE_KEY, v); else localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
+      location.reload();
+    });
     document.getElementById("btnImport").addEventListener("click", openModal);
     document.getElementById("doImport").addEventListener("click", function(){
       runImport(document.getElementById("importText").value.trim());
