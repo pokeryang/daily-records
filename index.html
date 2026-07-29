@@ -2166,6 +2166,8 @@
   // ============================================================
   var SUPABASE_URL      = "https://gwerzaaishbvtaxhwezv.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_mlvyWH8gGyPjwvFgVbhRjA__HE3yrwr";
+  // 同源(pokeryang.github.io)各应用共用的解锁密钥，用于云端 RLS 校验
+  var SECRET_STORE_KEY  = "expense-app-secret";
 
   // ---------- state ----------
   var DEFAULT_PROFILE = { weightKg: 80, heightCm: 180, sex: "male" };
@@ -2217,11 +2219,27 @@
     var bad = !SUPABASE_URL || SUPABASE_URL.indexOf("PASTE")>=0 || !/^https:\/\//.test(SUPABASE_URL)
            || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.indexOf("PASTE")>=0;
     if(bad || !window.supabase || !window.supabase.createClient){ setCloudStatus("local"); mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800); return; }
+    var APP_SECRET = "";
+    try{ APP_SECRET = localStorage.getItem(SECRET_STORE_KEY) || ""; }catch(e){}
+    if(!APP_SECRET){
+      APP_SECRET = (window.prompt("输入数据密钥以解锁云同步（留空则仅本地模式）：")||"").trim();
+      if(APP_SECRET){ try{ localStorage.setItem(SECRET_STORE_KEY, APP_SECRET); }catch(e){} }
+    }
+    if(!APP_SECRET){ setCloudStatus("local"); mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800); return; }
     try{
-      SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global:{ headers:{ "x-app-secret": APP_SECRET } } });
       CLOUD_ON = true;
       setCloudStatus("connecting");
-      cloudBootstrap();
+      SB.rpc("verify_expense_secret").then(function(vr){
+        if(vr.error || vr.data!==true){
+          try{ localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
+          CLOUD_ON=false; setCloudStatus("local");
+          toast("数据密钥无效，已切到本地模式；刷新可重新输入", true);
+          mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800);
+          return;
+        }
+        cloudBootstrap();
+      });
     }catch(e){ console.warn("cloud init failed", e); CLOUD_ON=false; setCloudStatus("local"); }
   }
 
