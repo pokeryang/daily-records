@@ -2783,14 +2783,13 @@
         if(ra!==rb) return rb-ra;                 // 最丰富的作底
         return (a.createdAt||0)-(b.createdAt||0); // 再取最早(稳定 id)
       });
-      var base=g[0], exList=[], exSeen={}, partSeen={};
+      var base=g[0], exList=[], partSeen={};
       g.forEach(function(r){
         (r.exercises||[]).forEach(function(e){
           var nm=(e&&e.name!=null)?String(e.name).trim():"";
           var hasSet=((e&&e.sets)||[]).some(function(s){ return s && (s.w!=null||s.r!=null); });
           if(!nm && !hasSet) return;              // 丢弃幽灵空动作
-          var sg=exSig(e);
-          if(!exSeen[sg]){ exSeen[sg]=1; exList.push(e); }  // 相同动作只留一份，不同动作全保留
+          exList.push(e);                         // 重复动作原样保留、不去重
         });
         (r.parts||[]).forEach(function(p){ if(p) partSeen[p]=1; });
       });
