@@ -3560,7 +3560,14 @@
     var cntEl=document.getElementById("cnt-"+m);
     if(cntEl) cntEl.textContent=all.length;
     var html=shown.map(function(r){ return sheetRowHTML(m,r,cols); }).join("");
-    html += sheetNewRowHTML(m, cols);   // blank trailing row = 新增
+    if(!shown.length){
+      var span = cols.length + (m==="house" ? 2 : 1);   // house: +图片列+操作列; 其余: +操作列
+      var msg = (m==="thought") ? "还没有思考记录，点下方「添加 +」开始"
+              : (m==="book")    ? "还没有阅读记录，点下方「添加 +」开始"
+              : (m==="house")   ? "还没有看房记录，点下方「添加 +」开始"
+              :                   "还没有记录，点下方「添加 +」开始";
+      html = '<tr><td colspan="'+span+'" class="htable-empty">'+msg+'</td></tr>';
+    }
     body.innerHTML=html;
     autoGrowAll(body);
   }
@@ -4229,18 +4236,12 @@
         }
       });
     });
-    // 「添加 +」按钮 → 滚动并聚焦到底部的空白新增行
+    // 「添加 +」按钮 → 新增一行（与行内「+」一致：插入到上方、不跳动，刷新后才按日期倒序）
     document.querySelectorAll("[data-add-sheet]").forEach(function(btn){
       btn.addEventListener("click", function(){
         var m=btn.getAttribute("data-add-sheet");
-        var body=document.querySelector('[data-sheet-body="'+m+'"]');
-        if(!body) return;
-        var newRow=body.querySelector('tr.sheet-new');
-        if(!newRow){ sheetRender(m); newRow=body.querySelector('tr.sheet-new'); }
-        if(!newRow) return;
-        try{ newRow.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(err){ newRow.scrollIntoView(); }
-        var target=newRow.querySelector('[data-k]:not([data-k="time"])') || newRow.querySelector('[data-k]');
-        if(target){ setTimeout(function(){ try{ target.focus(); }catch(err){} }, 60); }
+        if(m==="house"){ houseAddRow(); return; }
+        sheetAddRow(m);
       });
     });
 
