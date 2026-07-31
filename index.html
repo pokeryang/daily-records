@@ -2829,9 +2829,8 @@
     }else if(rec.module==="book"){
       if(!rec.book) return null;
       var fp=num(rec.fromPage), tp=num(rec.toPage);
-      if(fp==null||tp==null) return null;
       r.book=String(rec.book).trim(); r.fromPage=fp; r.toPage=tp;
-      r.pagesRead = Math.max(0, tp-fp);
+      r.pagesRead = (fp!=null && tp!=null) ? Math.max(0, tp-fp) : null;
       r.note = rec.note ? String(rec.note).trim() : "";
     }else if(rec.module==="house"){
       if(!rec.community) return null;
