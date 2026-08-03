@@ -2338,6 +2338,22 @@
   // ---------- helpers ----------
   function uid(){ return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
   function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
+  // 数字输入过滤：仅保留数字（整数字段）或数字+单个小数点（小数字段），阻止填入单位等文字
+  function numFilter(el){
+    if(!el) return;
+    var intOnly = el.getAttribute("data-numint")==="1";
+    var v = el.value;
+    var c = intOnly ? v.replace(/[^\d]/g,"") : v.replace(/[^\d.]/g,"");
+    if(!intOnly){
+      var fi = c.indexOf(".");
+      if(fi>=0) c = c.slice(0,fi+1) + c.slice(fi+1).replace(/\./g,"");
+    }
+    if(c!==v){
+      var start = el.selectionStart;
+      el.value = c;
+      try{ var p=Math.max(0,(start==null?c.length:start)-(v.length-c.length)); el.setSelectionRange(p,p); }catch(e){}
+    }
+  }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
@@ -3100,9 +3116,9 @@
         cells += '<td class="span-cell parts-cell" rowspan="'+span+'">'+partTagsHTML(r)+'</td>';
       }
       cells += '<td><textarea class="hc hc-ta" rows="1" data-f="name" data-ei="'+ln.ei+'" data-si="'+ln.si+'">'+esc(ln.name)+'</textarea></td>';
-      cells += '<td class="num wcell"><input class="hc" type="number" step="any" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="any" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
-      cells += '<td class="num"><input class="hc" type="number" step="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
+      cells += '<td class="num wcell"><input class="hc" type="text" inputmode="decimal" data-f="w" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.w==null?"":ln.w)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="text" inputmode="numeric" data-numint="1" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
+      cells += '<td class="num"><input class="hc" type="text" inputmode="numeric" data-numint="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
       if(first){
         var kc=calcCalories(r);
         cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal">'+(kc>0?kc:"")+'</td>';
@@ -3267,12 +3283,12 @@
       + '<td><input class="hc" type="date" data-cf="time" value="'+esc(r.time.slice(0,10))+'"></td>'
       + '<td><select class="hc" data-cf="sport">'+opts+'</select></td>'
       + '<td class="num durc">'
-        + '<input class="hc" type="number" step="1" min="0" data-cf="durH" value="'+durH+'">'
+        + '<input class="hc" type="text" inputmode="numeric" data-numint="1" data-cf="durH" value="'+durH+'">'
         + '<span class="du-unit">&#8242;</span>'
-        + '<input class="hc" type="number" step="1" min="0" data-cf="durM" value="'+durM+'">'
+        + '<input class="hc" type="text" inputmode="numeric" data-numint="1" data-cf="durM" value="'+durM+'">'
         + '<span class="du-unit">&#8243;</span>'
       + '</td>'
-      + '<td class="num distc"><input class="hc" type="number" step="any" min="0" data-cf="dist" value="'+esc(distTxt)+'"><span class="du-unit">km</span></td>'
+      + '<td class="num distc"><input class="hc" type="text" inputmode="decimal" data-cf="dist" value="'+esc(distTxt)+'"><span class="du-unit">km</span></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
       + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="上方加一行">+</button>'
@@ -4252,6 +4268,8 @@
       });
       sBody.addEventListener("input", function(e){
         if(e.target && e.target.classList && e.target.classList.contains("hc-ta")) autoGrowTextarea(e.target);
+        var nf=e.target && e.target.closest && e.target.closest('[data-f="w"],[data-f="r"],[data-f="n"]');
+        if(nf) numFilter(nf);
       });
       sBody.addEventListener("keydown", function(e){
         if(e.key==="Enter" && e.target && e.target.classList && e.target.classList.contains("hc-ta")){
@@ -4296,6 +4314,10 @@
       cBody.addEventListener("change", function(e){
         var el=e.target.closest("[data-cf]");
         if(el) cardioEdit(el);
+      });
+      cBody.addEventListener("input", function(e){
+        var nf=e.target && e.target.closest && e.target.closest('[data-cf="durH"],[data-cf="durM"],[data-cf="dist"]');
+        if(nf) numFilter(nf);
       });
       cBody.addEventListener("click", function(e){
         var add=e.target.closest("[data-cardio-add]");
