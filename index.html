@@ -4029,14 +4029,14 @@
       if(r.sport==="健身"){ map[key].gym=true; (r.parts||[]).forEach(function(p){ map[key].parts[p]=true; }); }
       else { var k=cardioKind(r)||"健走"; map[key].cardio[k]=true; }
     });
-    var firstDow=new Date(y,m,1).getDay();      // 0=Sun
+    var firstDow=(new Date(y,m,1).getDay()+6)%7; // 周一=0
     var days=new Date(y,m+1,0).getDate();
     var today=new Date(); var isThisMonth=(today.getFullYear()===y && today.getMonth()===m);
     var html='<div class="cal-nav"><button type="button" data-cal-nav="-1">&#8249;</button>'
       + '<span class="cal-title">'+y+' 年 '+(m+1)+' 月</span>'
       + '<button type="button" data-cal-nav="1">&#8250;</button></div>';
     html+='<div class="cal-grid">';
-    ["日","一","二","三","四","五","六"].forEach(function(w){ html+='<div class="cal-dow">'+w+'</div>'; });
+    ["一","二","三","四","五","六","日"].forEach(function(w){ html+='<div class="cal-dow">'+w+'</div>'; });
     for(var i=0;i<firstDow;i++) html+='<div class="cal-cell empty"></div>';
     for(var dd=1;dd<=days;dd++){
       var info=map[dd], dots="", hasInfo=false;
