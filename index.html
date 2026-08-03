@@ -363,6 +363,9 @@
   .durc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
   .durc input.hc{width:34px; text-align:center; padding:2px 3px}
   .durc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
+  .distc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
+  .distc input.hc{width:44px; text-align:center; padding:2px 3px}
+  .distc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
 
   /* 统计：左日历 + 右柱状图 两栏 */
   .stats-2col{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
@@ -1879,7 +1882,7 @@
                 <th style="width:112px">时间</th>
                 <th style="width:64px">类型</th>
                 <th style="width:120px">时长</th>
-                <th style="width:78px">距离</th>
+                <th style="width:78px">距离(km)</th>
                 <th style="width:104px">平均配速</th>
                 <th style="width:62px">消耗</th>
                 <th style="width:52px">操作</th>
@@ -3256,7 +3259,7 @@
   }
   function cardioRowHTML(r){
     var opts=CARDIO_SPORTS.map(function(o){ return '<option value="'+esc(o)+'"'+(r.sport===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("");
-    var distTxt = (r.distance!=null && r.distance!=="") ? (r.distance + "km") : "";
+    var distTxt = (r.distance!=null && r.distance!=="") ? String(r.distance) : "";
     var pace=cardioPaceStr(r), kcal=calcCalories(r);
     var totalMin = num(r.duration); if(totalMin==null || totalMin<0) totalMin = 0;
     var durH = Math.floor(totalMin/60), durM = Math.round(totalMin - durH*60);
@@ -3269,7 +3272,7 @@
         + '<input class="hc" type="number" step="1" min="0" data-cf="durM" value="'+durM+'">'
         + '<span class="du-unit">&#8243;</span>'
       + '</td>'
-      + '<td><input class="hc" data-cf="dist" value="'+esc(distTxt)+'"></td>'
+      + '<td class="num distc"><input class="hc" type="number" step="any" min="0" data-cf="dist" value="'+esc(distTxt)+'"><span class="du-unit">km</span></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
       + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="上方加一行">+</button>'
@@ -3314,8 +3317,9 @@
       var mi=num(mEl && mEl.value); if(mi==null || mi<0) mi=0;
       r.duration = String(h*60 + mi);
     }else if(f==="dist"){
-      var d=parseDistText(r.sport, el.value);
-      r.distance=d.distance; r.distUnit=d.unit;
+      var dv=num(el.value);
+      if(dv==null || dv<0 || !(dv>0)){ r.distance=null; r.distUnit=""; }
+      else { r.distance=dv; r.distUnit="km"; }
       r.raw = "";
     }
     r.updatedAt=Date.now();
