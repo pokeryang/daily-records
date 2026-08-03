@@ -2703,7 +2703,12 @@
     }
     r.parts = isGym ? normParts(r.parts) : [];
     if(isGym){ r.distance = null; r.distUnit = ""; }
-    else { r.exercises = []; }
+    else {
+      r.exercises = [];
+      // 旧数据里 sport 可能是已废弃的「其他」或空值：下拉框无匹配项时会误显示成第一项(游泳)，
+      // 且类型筛选按 sport 精确匹配会漏掉它们。这里统一按 cardioKind 归一到有效类别。
+      if(CARDIO_SPORTS.indexOf(r.sport)<0){ r.sport = cardioKind(r) || "健走"; }
+    }
     return r;
   }
   function recRichness(r){
