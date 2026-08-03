@@ -363,9 +363,6 @@
   .durc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
   .durc input.hc{width:34px; text-align:center; padding:2px 3px}
   .durc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
-  .distc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
-  .distc input.hc{width:44px; text-align:center; padding:2px 3px}
-  .distc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
 
   /* 统计：左日历 + 右柱状图 两栏 */
   .stats-2col{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
@@ -3288,7 +3285,7 @@
         + '<input class="hc" type="text" inputmode="numeric" data-numint="1" data-cf="durM" value="'+durM+'">'
         + '<span class="du-unit">&#8243;</span>'
       + '</td>'
-      + '<td class="num distc"><input class="hc" type="text" inputmode="decimal" data-cf="dist" value="'+esc(distTxt)+'"><span class="du-unit">km</span></td>'
+      + '<td><input class="hc" type="text" inputmode="decimal" data-cf="dist" value="'+esc(distTxt)+'"></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
       + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="上方加一行">+</button>'
