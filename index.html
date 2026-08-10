@@ -182,8 +182,11 @@
 
   /* Generalized spreadsheet (thought / sport / book reuse .htable) */
   table.htable.auto{min-width:0}
+  /* 有氧表格的列都是定宽：容器不够时宁可让 .htable-wrap 横向滚动，也不要等比压缩到
+     「类型」下拉只剩一个字、「时长」分钟数字被切掉。522px = 各列声明宽度之和。 */
+  table.htable.auto.cardio{min-width:522px}
   table.htable td select.hc{
-    width:100%; border:none; background:transparent; padding:7px 9px; font-size:13px;
+    width:100%; border:none; background:transparent; padding:7px 6px; font-size:13px;
     color:var(--ink); outline:none; appearance:auto; -webkit-appearance:auto;
   }
   table.htable td select.hc:focus{background:#fff; box-shadow:inset 0 0 0 2px rgba(59,130,246,.35); border-radius:6px}
@@ -361,7 +364,7 @@
 
   /* 时长双输入 hh h mm min */
   .durc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
-  .durc input.hc{width:34px; text-align:center; padding:2px 3px}
+  .durc input.hc{width:34px; flex:0 0 34px; text-align:center; padding:2px 3px}
   .durc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
 
   /* 统计：左日历 + 右柱状图 两栏 */
@@ -1876,13 +1879,13 @@
           <table class="htable auto cardio">
             <thead>
               <tr>
-                <th style="width:112px">时间</th>
-                <th style="width:64px">类型</th>
-                <th style="width:120px">时长</th>
-                <th style="width:78px">距离(km)</th>
-                <th style="width:104px">平均配速</th>
-                <th style="width:62px">消耗</th>
-                <th style="width:52px">操作</th>
+                <th style="width:84px">时间</th>
+                <th style="width:84px">类型</th>
+                <th style="width:100px">时长</th>
+                <th style="width:68px">距离(km)</th>
+                <th style="width:88px">平均配速</th>
+                <th style="width:50px">消耗</th>
+                <th style="width:48px">操作</th>
               </tr>
             </thead>
             <tbody data-cardio-body></tbody>
