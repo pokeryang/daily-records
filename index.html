@@ -2184,7 +2184,11 @@
   }
 
   // row cells -> raw record for validate()
-  function sheetBuildRaw(m, c){
+  // prev = 编辑前的原记录。表格只渲染了一部分字段成列，没有列的字段（看房的 propType/idea）
+  // 在 c 里根本不存在，若直接取 c.xxx 会得到 undefined 并被 validate 归一成空串回写云端 —— 静默丢数据。
+  // 所以：单元格里有的用单元格值，没渲染成列的一律沿用 prev 的旧值。
+  function sheetBuildRaw(m, c, prev){
+    function keep(k){ return (k in c) ? c[k] : (prev ? prev[k] : undefined); }
     var o={ module:m, time:c.time||"" };
     if(m==="thought"){ o.content=c.content; }
     else if(m==="book"){ o.book=c.book; o.fromPage=c.fromPage; o.toPage=c.toPage; o.note=c.note; }
@@ -2198,7 +2202,9 @@
       o.community=c.community; o.district=c.district; o.metro=c.metro;
       o.year=c.year; o.school=c.school; o.area=c.area; o.totalPrice=c.totalPrice;
       o.unitPrice=c.unitPrice; o.downPay=c.downPay;
-      o.advantage=c.advantage; o.disadvantage=c.disadvantage; o.idea=c.idea; o.remark=c.remark;
+      o.advantage=c.advantage; o.disadvantage=c.disadvantage; o.remark=c.remark;
+      o.propType=keep("propType"); o.idea=keep("idea");
+      if(prev && prev.houseType!=null && !("houseType" in c)) o.houseType=prev.houseType;
     }
     return o;
   }
@@ -2299,8 +2305,11 @@
   }
   function sheetOnChange(m, tr){
     var cells=sheetReadRow(tr);
-    var raw=sheetBuildRaw(m, cells);
-    if(tr.getAttribute("data-new")==="1"){
+    var isNew = tr.getAttribute("data-new")==="1";
+    var editId = isNew ? null : tr.getAttribute("data-id");
+    var prev = editId ? state.records.find(function(x){ return x.id===editId; }) : null;
+    var raw=sheetBuildRaw(m, cells, prev);
+    if(isNew){
       var r=validate(raw);
       if(!r) return;                       // still incomplete; let the user keep typing
       if(m==="house"){ r.seq=nextHouseSeq(); r.added=true; if(!Array.isArray(r.images)) r.images=[]; }
