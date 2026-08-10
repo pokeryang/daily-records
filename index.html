@@ -3510,7 +3510,7 @@
     var k=col.k;
     if(col.type==="ro"){
       var disp = r ? sheetCellVal(m,r,k) : "";
-      return '<td class="readonly'+(col.cls?(" "+col.cls):"")+'">'+esc(disp)+'</td>';
+      return '<td class="readonly'+(col.cls?(" "+col.cls):"")+'" data-ro="'+esc(k)+'">'+esc(disp)+'</td>';
     }
     var val = r ? sheetCellVal(m,r,k) : (isNew && k==="time" ? todayStr() : "");
     var tdcls=((col.cls?col.cls+" ":"")+(col.type==="num"?"num":"")).trim();
@@ -3626,7 +3626,11 @@
       }
       state.records[idx]=r2;
       save(); cloudUpsert(r2);
-      // 不立即 re-render 以免改日期后行跳动，刷新页面才重排
+      // 不立即 re-render 以免改日期后行跳动，刷新页面才重排；
+      // 但只读列(本次页数/配速/消耗)必须就地刷新，否则会一直停留在旧值。
+      [].forEach.call(tr.querySelectorAll("[data-ro]"), function(td){
+        td.textContent = sheetCellVal(m, r2, td.getAttribute("data-ro"));
+      });
       if(m==="sport") renderStats();
       document.getElementById("totalCount").textContent="共 "+state.records.length+" 条";
     }
