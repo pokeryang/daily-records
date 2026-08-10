@@ -449,27 +449,13 @@
 <body>
 
 <!-- ============================================================
-  QoderWork 自动导入区（SEED_DATA）
-  ------------------------------------------------------------
-  我（QoderWork）把你口述/整理的记录整理成下面数组里的对象即可，
-  你无需任何手动操作：下次打开本页会自动校验 + 去重后并入本地数据。
-  每条记录已导入过就不会重复添加；即便你后来删掉了，也不会被重新塞回。
-
-  各模块字段格式（time 用 "YYYY-MM-DD HH:mm" 或 "YYYY-MM-DD"）：
-  思考:  {"module":"thought","time":"2026-07-19 09:30","content":"..."}
-  运动:  {"module":"sport","time":"2026-07-19 07:00","sport":"健身","parts":["胸","肩"],
-          "project":"卧推·飞鸟","sets":"","duration":""}
-          // sport: 游泳/跑步/骑行/爬山/健走/健身/其他；「其他」是兜底类目，能定具体类型就别用它；parts 仅健身用、可多个(胸/背/肩/腿)；duration 分钟；健身+有氧当天拆成两条
-  读书:  {"module":"book","time":"2026-07-19 22:00","book":"活着（余华）",
-          "fromPage":"12","toPage":"58","note":"（可省略）"}
-  看房:  {"module":"house","time":"2026-07-19 15:00","community":"翠湖天地",
-          "houseType":"二手","room":"3-2-501","area":"89","totalPrice":"620",
-          "advantage":"...","disadvantage":"...","idea":"..."}   // houseType: 新房/二手；totalPrice 单位万
-  提示：可给每条加 "id":"你自定义的稳定ID" 以精确去重；不给则按内容自动生成签名去重。
+  说明：这里原来有一个 SEED_DATA 自动导入区（内嵌 131 条记录，打开页面即自动补录）。
+  已于 2026-08-10 彻底移除，连同 mergeSeed()/seenSeedIds 一起。
+  原因：它是"记录删了又回来""同一条健身被追加九遍"的根源——判重靠内容签名，
+  你手动改过或补过字段后签名就失配，于是每次打开都当成新记录再导一次。
+  现在本页只做增删改查：你不动它，它一个字节都不会改。
+  需要批量补数据请用右上角「导入 JSON」，那是你主动点的，导完就结束。
 ============================================================ -->
-<script id="seed-data" type="application/json">
-[]
-</script>
 
 <div class="topbar">
   <div class="topbar-inner">
@@ -508,6 +494,12 @@
             <div class="st-weight" style="margin-top:8px">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
             <!-- AI 估算密钥：只存本机 localStorage["dashscope-api-key"]，不入源码、不上云 -->
             <div class="st-weight" style="margin-top:4px">AI 估算密钥 <input type="password" autocomplete="off" spellcheck="false" placeholder="未配置（留空=只用 MET 公式）" data-k="aiKey" style="width:150px;text-align:left"> <span data-ai-key-state style="color:var(--muted)"></span></div>
+            <!-- 维护工具：这两件事原来每次打开页面自动跑并直接改云端，现已改为手动触发 -->
+            <div class="st-weight" style="margin-top:6px">
+              维护工具
+              <button type="button" class="btn tiny ghost" data-tool="mergeGym">合并同日健身</button>
+              <button type="button" class="btn tiny ghost" data-tool="aiKcal">AI 补算卡路里</button>
+            </div>
           </div>
           <!-- 右：运动趋势柱状图 -->
           <div class="stpanel st-chart">
@@ -873,6 +865,8 @@
   "use strict";
 
   var STORE_KEY = "daily-records-v1";
+  // 云端权威同步时，本地被判定为"已在别处删除"而移除的记录，先在这里留一份底，防误伤。
+  var ORPHAN_BACKUP_KEY = "daily-records-orphans-v1";
   var MODULES = ["thought","sport","book","house"];
   // 「其他」是有氧的正式兜底类目：sport 缺失或不在白名单时归到这里，可见可选、可再手工改。
   var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","其他"];
@@ -892,7 +886,7 @@
 
   // ---------- state ----------
   var DEFAULT_PROFILE = { weightKg: 80, heightCm: 180, sex: "male" };
-  var state = { records: [], seenSeedIds: [], pendingOps: [], profile: { weightKg: 80, heightCm: 180, sex: "male" } };
+  var state = { records: [], pendingOps: [], profile: { weightKg: 80, heightCm: 180, sex: "male" } };
 
   function load(){
     try{
@@ -900,7 +894,6 @@
       if(raw){
         var p = JSON.parse(raw);
         state.records = Array.isArray(p.records) ? p.records : [];
-        state.seenSeedIds = Array.isArray(p.seenSeedIds) ? p.seenSeedIds : [];
         state.pendingOps = Array.isArray(p.pendingOps) ? p.pendingOps : [];
         if(p.profile && typeof p.profile==="object"){
           state.profile = {
@@ -939,14 +932,14 @@
   function initCloud(){
     var bad = !SUPABASE_URL || SUPABASE_URL.indexOf("PASTE")>=0 || !/^https:\/\//.test(SUPABASE_URL)
            || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.indexOf("PASTE")>=0;
-    if(bad || !window.supabase || !window.supabase.createClient){ setCloudStatus("local"); mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800); return; }
+    if(bad || !window.supabase || !window.supabase.createClient){ setCloudStatus("local"); renderAll(); return; }
     var APP_SECRET = "";
     try{ APP_SECRET = localStorage.getItem(SECRET_STORE_KEY) || ""; }catch(e){}
     if(!APP_SECRET){
       APP_SECRET = (window.prompt("输入数据密钥以解锁云同步（留空则仅本地模式）：")||"").trim();
       if(APP_SECRET){ try{ localStorage.setItem(SECRET_STORE_KEY, APP_SECRET); }catch(e){} }
     }
-    if(!APP_SECRET){ setCloudStatus("local"); mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800); return; }
+    if(!APP_SECRET){ setCloudStatus("local"); renderAll(); return; }
     try{
       SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global:{ headers:{ "x-app-secret": APP_SECRET } } });
       CLOUD_ON = true;
@@ -956,7 +949,7 @@
           try{ localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
           CLOUD_ON=false; setCloudStatus("local");
           toast("数据密钥无效，已切到本地模式；刷新可重新输入", true);
-          mergeSeed(); renderAll(); setTimeout(autoEstimateAll, 800);
+          renderAll();
           return;
         }
         cloudBootstrap();
@@ -1005,28 +998,49 @@
   }
   function cloudBootstrap(){
     SB.from("records").select("*").then(function(res){
-      if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); setTimeout(autoEstimateAll, 800); return; }
+      if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); return; }
+
+      // ===== 同步契约：云端权威 =====
+      // 本地 localStorage 只是云端的一份镜像 + 一个离线改动的待发件箱，它不是数据源。
+      // 打开页面 = 用云端覆盖本地，唯一例外是「本机离线期间改过、还没传上去」的行。
+      // 反过来的方向（本地有、云端没有 → 推回云端）已彻底关闭：那正是记录"删了又回来"的通道，
+      // 因为在别的设备/别的浏览器删掉的行，在这台机器的缓存里看起来就是"本地独有"。
+      var pendingUp = {}, pendingDel = {};
+      (state.pendingOps||[]).forEach(function(o){
+        if(o.op==="delete" && o.id) pendingDel[o.id]=true;
+        if(o.op==="upsert" && o.id) pendingUp[o.id]=true;
+      });
+
       var cloudById = {};
-      // 待办队列里已标记删除的行：云端还留着，但绝不能 merge 回本地。
-      // 否则它会被写进 localStorage，下次打开变成"本地独有"再被推回云端 —— 永远删不掉。
-      var pendingDel = {};
-      (state.pendingOps||[]).forEach(function(o){ if(o.op==="delete" && o.id) pendingDel[o.id]=true; });
-      (res.data||[]).forEach(function(row){ var r=recFromRow(row); if(pendingDel[r.id]) return; cloudById[r.id]=r; });
-      // union：本地为基础，云端覆盖同 id（云端权威），本地独有的先保留稍后上推
-      var localOnly = state.records.filter(function(r){ return !cloudById[r.id] && !pendingDel[r.id]; });
-      var merged = {};
-      state.records.forEach(function(r){ merged[r.id]=r; });
-      Object.keys(cloudById).forEach(function(id){ merged[id]=cloudById[id]; });
-      state.records = Object.keys(merged).map(function(k){ return merged[k]; });
-      var mergedGym = reconcile();
-      mergeSeed();          // now safe: dedups against full cloud+local set
+      (res.data||[]).forEach(function(row){
+        var r = recFromRow(row);
+        if(pendingDel[r.id]) return;   // 本机已删、等着补传的，不要 merge 回来
+        cloudById[r.id] = r;
+      });
+
+      var next = [], dropped = [];
+      Object.keys(cloudById).forEach(function(id){ next.push(cloudById[id]); });
+      state.records.forEach(function(r){
+        if(cloudById[r.id]) return;                       // 云端已有，用云端版本
+        if(pendingUp[r.id]){ next.push(r); return; }      // 离线新增/修改，待补传，保留
+        dropped.push(r);                                  // 其余：已在别处删除
+      });
+
+      if(dropped.length){
+        // 不静默丢：留一份本机备份，万一是误判还能捞回来。只留最近 500 条，避免撑爆 localStorage。
+        try{
+          var bk = JSON.parse(localStorage.getItem(ORPHAN_BACKUP_KEY)||"[]");
+          if(!Array.isArray(bk)) bk = [];
+          bk = bk.concat(dropped).slice(-500);
+          localStorage.setItem(ORPHAN_BACKUP_KEY, JSON.stringify(bk));
+        }catch(e){}
+        console.warn("[sync] 本地多出 "+dropped.length+" 条云端已不存在的记录，按云端为准移除", dropped);
+      }
+
+      state.records = next;
       save(); renderAll(); setCloudStatus("synced");
-      if(mergedGym) toast("已合并 "+mergedGym+" 条同日健身记录");
-      var aliveIds = {}; state.records.forEach(function(r){ aliveIds[r.id]=true; });
-      localOnly.forEach(function(r){ if(aliveIds[r.id]) cloudUpsert(r); });   // 把本地独有记录推到云端
       flushOutbox();
       subscribeRealtime();
-      setTimeout(autoEstimateAll, 800);
     });
   }
   var _realtimeRenderPending = false;
@@ -1304,20 +1318,22 @@
     }, 800);
   }
   var _autoEstimateRunning = false;
-  function autoEstimateAll(){
-    if(_autoEstimateRunning) return;
+  // 只在用户点「AI 补算卡路里」按钮时才跑；已不在启动路径上。
+  function autoEstimateAll(done){
+    function fin(changed, total){ _autoEstimateRunning=false; if(typeof done==="function") done(changed, total); }
+    if(_autoEstimateRunning){ if(typeof done==="function") done(-1, 0); return; }
     _autoEstimateRunning = true;
     var todo = state.records.filter(function(r){
       if(r.module!=="sport") return false;
       if(r.kcal>0) return false;
       return aiEligible(r);
     });
-    if(!todo.length){ _autoEstimateRunning = false; return; }
+    if(!todo.length){ fin(0, 0); return; }
     var i = 0, changed = 0;
     function next(){
       if(i>=todo.length){
-        _autoEstimateRunning = false;
         if(changed) { renderStats(); updTotal(); }
+        fin(changed, todo.length);
         return;
       }
       var r = todo[i++];
@@ -1527,10 +1543,8 @@
     removed.forEach(function(r){ cloudDelete(r.id); });
     return removed.length;
   }
-  function reconcile(){
-    state.records.forEach(normalizeSportRec);
-    return mergeSameDayGym();
-  }
+  // 已移除：reconcile()。它把"归一化运动类型"和"合并同日健身(含删云端行)"打包挂在启动路径上，
+  // 每次打开页面都自动改云端。mergeSameDayGym() 保留，但现在只由「合并同日健身」按钮手动触发。
 
   function validate(rec){
     if(!rec || MODULES.indexOf(rec.module)<0) return null;
@@ -1634,35 +1648,12 @@
     return {added:added, skippedDup:dup, invalid:invalid};
   }
 
-  // ---------- seed merge (auto, no user action) ----------
-  function mergeSeed(){
-    var el = document.getElementById("seed-data");
-    if(!el) return;
-    var arr;
-    try{ arr = JSON.parse(el.textContent.trim()||"[]"); }
-    catch(e){ console.warn("seed parse error", e); return; }
-    if(!Array.isArray(arr) || !arr.length) return;
-    var seen = {}; state.seenSeedIds.forEach(function(k){ seen[k]=true; });
-    var fresh = [];
-    arr.forEach(function(raw){
-      var r = validate(raw);
-      if(!r) return;
-      // seed key: explicit id else content signature (stable)
-      var key = (raw && raw.id) ? ("id:"+raw.id) : ("sig:"+signature(r));
-      if(seen[key]) return;              // already imported (or user deleted it) -> skip
-      raw.__seedKey = key;
-      fresh.push(raw);
-      seen[key]=true;
-      state.seenSeedIds.push(key);
-    });
-    if(fresh.length){
-      var res = importRecords(fresh);
-      save();
-      if(res.added) toast("自动导入了 "+res.added+" 条新记录");
-    }else{
-      save(); // persist seenSeedIds even if nothing new
-    }
-  }
+  // ---------- seed merge：已删除 ----------
+  // 原 mergeSeed() 在每次打开页面时把内嵌的 131 条 seed 记录"自动补录"一遍，
+  // 判重靠内容签名 + 只存本机 localStorage 的 seenSeedIds。
+  // 后果：换浏览器 / 清缓存 / 无痕窗口 / 改过签名逻辑，整批重导；
+  // 你手动改过或 AI 补过字段的记录签名失配，也会被当成新记录再导一次。
+  // 一次性导入逻辑不该常驻启动路径。需要批量补数据请用右上角「导入 JSON」——你点它才跑。
 
   // ---------- rendering ----------
   var searchTerms = {thought:"",sport:"",book:"",house:"",strength:"",cardio:""};
@@ -2351,11 +2342,8 @@
     state.records=state.records.filter(function(x){ return x.id!==id; });
     save(); cloudDelete(id, true); renderAfterChange(m);
   }
-  function migrateHouse(){
-    var before=state.records.length;
-    state.records=state.records.filter(function(r){ return !(r.module==="house" && r.v!==2); });
-    if(state.records.length!==before) save();
-  }
+  // 已移除：migrateHouse()。它在启动时过滤掉 v!==2 的老看房记录，属一次性迁移；
+  // 云端 31 条看房记录已全部是 v=2，留着只会成为下一个"启动即改数据"的隐患。
 
   // ---------- house images ----------
   function findHouse(id){
@@ -3204,6 +3192,36 @@
       toast(v ? "AI 估算密钥已保存到本机" : "已清除本机 AI 估算密钥");
     });
 
+    // 维护工具：原来这两件事在每次打开页面时自动跑、直接改云端，现在只有点按钮才执行
+    var mgBtn=document.querySelector('[data-tool="mergeGym"]');
+    if(mgBtn) mgBtn.addEventListener("click", function(){
+      var days={}, dup=0;
+      state.records.forEach(function(r){
+        if(r.module==="sport" && r.sport==="健身"){
+          var d=String(r.time||"").slice(0,10);
+          days[d]=(days[d]||0)+1;
+          if(days[d]===2) dup++;
+        }
+      });
+      if(!dup){ toast("没有同日重复的健身记录，无需合并"); return; }
+      if(!confirm("发现 "+dup+" 天存在多条健身记录。\n合并会把这些天的动作并到一条里，并删除多余的行（云端同步删除）。\n确认合并？")) return;
+      var n=mergeSameDayGym();
+      renderAll();
+      toast(n ? ("已合并 "+dup+" 天，删除 "+n+" 条多余记录") : "无需合并");
+    });
+
+    var aiBtn=document.querySelector('[data-tool="aiKcal"]');
+    if(aiBtn) aiBtn.addEventListener("click", function(){
+      if(!getAiKey()){ toast("请先在上方填入 AI 估算密钥", true); return; }
+      aiBtn.disabled=true; aiBtn.textContent="估算中…";
+      autoEstimateAll(function(changed, total){
+        aiBtn.disabled=false; aiBtn.textContent="AI 补算卡路里";
+        if(changed<0){ toast("上一次估算还没跑完，稍等一下", true); return; }
+        if(!total){ toast("没有缺卡路里的运动记录"); return; }
+        toast("已补算 "+changed+"/"+total+" 条卡路里");
+      });
+    });
+
     // search
     document.querySelectorAll("[data-search]").forEach(function(inp){
       inp.addEventListener("input", function(){
@@ -3226,12 +3244,13 @@
   }
 
   // ---------- init ----------
+  // 启动路径只做四件事：读本地缓存 → 绑事件 → 渲染 → 拉云端。
+  // 这里不再有任何"顺手把数据修一修"的逻辑：不补录、不去重、不删空记录、
+  // 不改写运动类型、不合并同日健身、不自动算卡路里。你不动它，它一个字节都不改。
   load();
-  migrateHouse();       // drop legacy (pre-v2) house records so they aren't re-synced
   bind();
-  reconcile();          // migrate legacy rows + drop local duplicates
   renderAll();
-  initCloud();          // 连接 Supabase（未配置则保持本地模式；连上后再并入 seed）
+  initCloud();          // 连接 Supabase 并以云端为准刷新本地（未配置则保持本地模式）
 })();
 </script>
 </body>
