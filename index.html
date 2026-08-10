@@ -459,7 +459,7 @@
   思考:  {"module":"thought","time":"2026-07-19 09:30","content":"..."}
   运动:  {"module":"sport","time":"2026-07-19 07:00","sport":"健身","parts":["胸","肩"],
           "project":"卧推·飞鸟","sets":"","duration":""}
-          // sport: 游泳/跑步/骑行/爬山/健走/健身（勿用已废弃的「其他」）；parts 仅健身用、可多个(胸/背/肩/腿)；duration 分钟；健身+有氧当天拆成两条
+          // sport: 游泳/跑步/骑行/爬山/健走/健身/其他；「其他」是兜底类目，能定具体类型就别用它；parts 仅健身用、可多个(胸/背/肩/腿)；duration 分钟；健身+有氧当天拆成两条
   读书:  {"module":"book","time":"2026-07-19 22:00","book":"活着（余华）",
           "fromPage":"12","toPage":"58","note":"（可省略）"}
   看房:  {"module":"house","time":"2026-07-19 15:00","community":"翠湖天地",
@@ -468,1288 +468,7 @@
   提示：可给每条加 "id":"你自定义的稳定ID" 以精确去重；不给则按内容自动生成签名去重。
 ============================================================ -->
 <script id="seed-data" type="application/json">
-[
- {
-  "module": "sport",
-  "time": "2026-07-17",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "史密斯卧推30kg×10+40kg×10；自由卧推30kg×8×2（状态不好,浅浅推）；器械推胸35kg×8；夹胸45kg×12+47.5kg×12×3"
- },
- {
-  "module": "sport",
-  "time": "2026-07-17",
-  "sport": "游泳",
-  "duration": "37",
-  "project": "1.25km"
- },
- {
-  "module": "sport",
-  "time": "2026-07-15",
-  "sport": "游泳",
-  "duration": "30",
-  "project": "1km"
- },
- {
-  "module": "sport",
-  "time": "2026-07-13",
-  "sport": "健身",
-  "parts": [
-   "背",
-   "肩"
-  ],
-  "project": "引体向上27.5kg×11+25kg×12×2+27.5kg×12；高位下拉40kg×12×3；坐姿划船95kg×12×2+87.5kg×12×2；侧平举5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2026-07-12",
-  "sport": "跑步",
-  "project": "6km"
- },
- {
-  "module": "sport",
-  "time": "2026-07-05",
-  "sport": "游泳",
-  "duration": "45",
-  "project": "1.5km"
- },
- {
-  "module": "sport",
-  "time": "2026-06-21",
-  "sport": "健身",
-  "parts": [
-   "背",
-   "肩"
-  ],
-  "project": "引体向上27.5kg×10×4；高位下拉(一体机)42.5kg×12×4；坐姿划船80kg×12×4；哑铃推肩10kg×12×4；侧平举5kg×10×4"
- },
- {
-  "module": "sport",
-  "time": "2026-06-17",
-  "sport": "游泳",
-  "duration": "60",
-  "project": "1.5km"
- },
- {
-  "module": "sport",
-  "time": "2026-06-15",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "推胸20kg×12+30kg×8×3；夹胸50kg×12×2+47.5kg×12×2；推胸35kg×8×3"
- },
- {
-  "module": "sport",
-  "time": "2026-05-30",
-  "sport": "跑步",
-  "project": "7公里"
- },
- {
-  "module": "sport",
-  "time": "2026-05-25",
-  "sport": "跑步",
-  "project": "5公里"
- },
- {
-  "module": "sport",
-  "time": "2026-05-16",
-  "sport": "跑步",
-  "project": "23公里"
- },
- {
-  "module": "sport",
-  "time": "2026-05-10",
-  "sport": "骑行",
-  "project": "20公里"
- },
- {
-  "module": "sport",
-  "time": "2026-05-06",
-  "sport": "跑步",
-  "duration": "49",
-  "project": "7公里"
- },
- {
-  "module": "sport",
-  "time": "2026-04-21",
-  "sport": "健走",
-  "project": "快走4公里"
- },
- {
-  "module": "sport",
-  "time": "2026-04-08",
-  "sport": "骑行",
-  "duration": "60",
-  "project": "1小时"
- },
- {
-  "module": "sport",
-  "time": "2026-04-01",
-  "sport": "骑行",
-  "duration": "90",
-  "project": "1.5小时"
- },
- {
-  "module": "sport",
-  "time": "2026-03-14",
-  "sport": "骑行",
-  "duration": "180",
-  "project": "3小时"
- },
- {
-  "module": "sport",
-  "time": "2026-03-11",
-  "sport": "骑行",
-  "duration": "50"
- },
- {
-  "module": "sport",
-  "time": "2026-03-01",
-  "sport": "骑行",
-  "duration": "55"
- },
- {
-  "module": "sport",
-  "time": "2026-01-29",
-  "sport": "骑行",
-  "duration": "58"
- },
- {
-  "module": "sport",
-  "time": "2026-01-29",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑30"
- },
- {
-  "module": "sport",
-  "time": "2026-01-24",
-  "sport": "骑行",
-  "duration": "57"
- },
- {
-  "module": "sport",
-  "time": "2026-01-24",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑30"
- },
- {
-  "module": "sport",
-  "time": "2026-01-11",
-  "sport": "爬山",
-  "project": "爬山"
- },
- {
-  "module": "sport",
-  "time": "2026-01-10",
-  "sport": "骑行",
-  "duration": "51"
- },
- {
-  "module": "sport",
-  "time": "2026-01-06",
-  "sport": "骑行",
-  "duration": "60",
-  "project": "1小时"
- },
- {
-  "module": "sport",
-  "time": "2025-12-14",
-  "sport": "骑行",
-  "duration": "60",
-  "project": "1小时"
- },
- {
-  "module": "sport",
-  "time": "2025-12-08",
-  "sport": "骑行",
-  "duration": "55"
- },
- {
-  "module": "sport",
-  "time": "2025-12-03",
-  "sport": "骑行",
-  "duration": "55"
- },
- {
-  "module": "sport",
-  "time": "2025-12-02",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑40"
- },
- {
-  "module": "sport",
-  "time": "2025-11-15",
-  "sport": "骑行",
-  "duration": "48"
- },
- {
-  "module": "sport",
-  "time": "2025-11-15",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑40"
- },
- {
-  "module": "sport",
-  "time": "2025-11-11",
-  "sport": "骑行",
-  "duration": "40"
- },
- {
-  "module": "sport",
-  "time": "2025-11-11",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑40"
- },
- {
-  "module": "sport",
-  "time": "2025-11-04",
-  "sport": "骑行",
-  "duration": "45"
- },
- {
-  "module": "sport",
-  "time": "2025-11-04",
-  "sport": "健身",
-  "parts": [],
-  "project": "俯卧撑30"
- },
- {
-  "module": "sport",
-  "time": "2025-11-01",
-  "sport": "骑行",
-  "duration": "35"
- },
- {
-  "module": "sport",
-  "time": "2025-10-31",
-  "sport": "骑行",
-  "duration": "45"
- },
- {
-  "module": "sport",
-  "time": "2025-10-27",
-  "sport": "骑行",
-  "duration": "43"
- },
- {
-  "module": "sport",
-  "time": "2025-10-10",
-  "sport": "跑步",
-  "project": "5公里"
- },
- {
-  "module": "sport",
-  "time": "2025-09-29",
-  "sport": "跑步",
-  "project": "3.7公里"
- },
- {
-  "module": "sport",
-  "time": "2025-09-28",
-  "sport": "跑步",
-  "project": "2.2公里"
- },
- {
-  "module": "sport",
-  "time": "2025-09-15",
-  "sport": "骑行",
-  "duration": "35"
- },
- {
-  "module": "sport",
-  "time": "2025-09-11",
-  "sport": "跑步",
-  "duration": "31",
-  "project": "户外5km"
- },
- {
-  "module": "sport",
-  "time": "2025-08-23",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推40kg×12+50kg×12+60kg×12×2+60kg×10；夹胸55kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-08-23",
-  "sport": "跑步",
-  "duration": "30"
- },
- {
-  "module": "sport",
-  "time": "2025-08-02",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上20kg×12×4；高位下拉60kg×12×4；窄距下拉95kg×12×4；坐姿划船95kg×12"
- },
- {
-  "module": "sport",
-  "time": "2025-08-02",
-  "sport": "跑步",
-  "duration": "30"
- },
- {
-  "module": "sport",
-  "time": "2025-07-13",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推50kg×12+60kg×12+60kg×8+60kg×12；夹胸55kg×12×3"
- },
- {
-  "module": "sport",
-  "time": "2025-07-13",
-  "sport": "跑步",
-  "duration": "15"
- },
- {
-  "module": "sport",
-  "time": "2025-06-18",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "卧推机50kg×12；自由卧推60kg×12+60kg×8×2；夹胸50kg×12+55kg×12×3；侧平举7.5kg×12×3+5kg×12"
- },
- {
-  "module": "sport",
-  "time": "2025-06-14",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上20kg×12×4；上拉划船25kg×12×4；高位下拉40kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-06-10",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "自由卧推50kg×12+60kg×10+60kg×7×2；夹胸55kg×12+50kg×12+47.5kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-06-10",
-  "sport": "跑步",
-  "project": "（未记录时长/距离）"
- },
- {
-  "module": "sport",
-  "time": "2025-04-23",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "自由卧推50kg×12+60kg×12+70kg×7+70kg×8；夹胸57.5kg×12×3+55kg×12；侧平举7.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-04-09",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "自由卧推60kg×12+70kg×10+70kg×8；上斜17.5kg×12×3；夹胸57.5kg×12×2+55kg×12+55kg×10；侧平举5kg×15×2+5kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-04-09",
-  "sport": "跑步",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-04-06",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上15kg×12×4；上拉划船25kg×12×4；高位下拉45kg×12×3"
- },
- {
-  "module": "sport",
-  "time": "2025-04-06",
-  "sport": "跑步",
-  "duration": "32",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-03-27",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "自由卧推50kg×12+60kg×12+70kg×11+70kg×8；夹胸57.5kg×12+57.5kg×10+55kg×12×2；上斜17.5kg×12×3；侧平举5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-03-26",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上15kg×12×4；上拉划船25kg×12×4；坐姿划船95kg×12×3；高位下拉45kg×12+45kg×10×2"
- },
- {
-  "module": "sport",
-  "time": "2025-03-19",
-  "sport": "健身",
-  "parts": [
-   "腿"
-  ],
-  "project": "深蹲40kg×12+60kg×8+70kg×8×3；哈克深蹲(背靠)50kg×10×4；坐姿腿屈伸30kg×12×4；臀推15kg×12+20kg×12"
- },
- {
-  "module": "sport",
-  "time": "2025-03-18",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "自由卧推50kg×12+60kg×12×2+70kg×10×2；夹胸57.5kg×12+55kg×12×3；上斜哑铃17.5kg×12×2；侧平举7.5kg×12×3+5kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-03-18",
-  "sport": "跑步",
-  "duration": "30",
-  "project": "5公里"
- },
- {
-  "module": "sport",
-  "time": "2025-03-11",
-  "sport": "健身",
-  "parts": [
-   "背",
-   "肩"
-  ],
-  "project": "引体向上15kg×12×2+17.5kg×12+20kg×12；上拉划船30kg×12×3+双臂20kg×12；高位下拉45kg×12×2+40kg×12；哑铃划船17.5kg×12×2；侧平举5kg×12+7.5kg×10×4"
- },
- {
-  "module": "sport",
-  "time": "2025-03-11",
-  "sport": "跑步",
-  "duration": "21",
-  "project": "3.54公里"
- },
- {
-  "module": "sport",
-  "time": "2025-03-05",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "卧推50kg×12+60kg×12+70kg×12+70kg×9；夹胸55kg×12+57kg×12×3；上斜17.5kg×12×4；侧平举7.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-02-25",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上12.5kg×12+15kg×12+17.5kg×12+20kg×12；上拉划船30kg×12×4；高位下拉45kg×12；杠铃划船50kg×8+40kg×12；哑铃单臂划船15kg×12×2+17.5kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-02-25",
-  "sport": "跑步",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-02-24",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "卧推50kg×12+60kg×12+70kg×10+80kg×6；夹胸52.5kg×12+55kg×12+57.5kg×12×2；哑铃上斜17.5kg×4；哑铃侧平举7.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-02-20",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上0kg×4×4；机械单臂划船30kg×12×4；高位下拉(单边)35kg×12×2；高位下拉50kg×12×2；坐姿划船95kg×12×2+87.5kg×12"
- },
- {
-  "module": "sport",
-  "time": "2025-02-20",
-  "sport": "跑步",
-  "duration": "30",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-02-16",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推50kg×12+60kg×12×2+70kg×12+80kg×5；龙门架上27.5kg×12×3+35kg×12；龙门架中27.5kg×12×3；哑铃上斜15kg×12+17.5kg×12×3"
- },
- {
-  "module": "sport",
-  "time": "2025-02-16",
-  "sport": "跑步",
-  "duration": "30",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-02-12",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上12.5kg×8×4；机械单臂划船30kg×12×4；坐姿划船95kg×12+102.5kg×12+95kg×12×2；高位下拉45kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-02-10",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推40kg×12+50kg×12+60kg×12+60kg×8；史密斯卧推70kg×2；夹胸52.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-02-10",
-  "sport": "跑步",
-  "duration": "30",
-  "project": "5km"
- },
- {
-  "module": "sport",
-  "time": "2025-01-19",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上12.5kg×10×2+15kg×10×2；机械单臂划船30kg×12×4；高位下拉50kg×10+45kg×12×3；坐姿划船95kg×12×4；铁杆直臂下拉50kg×12+57.5kg×10+50kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2025-01-15",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "自由卧推40kg×12+60kg×12+60kg×10×3；夹胸52.5kg×12×4；龙门架单35kg×12×3+42.5kg×12；杠铃上斜40kg×5+40kg×10×2；龙门架双上27.5kg×12×2；中27.5kg×5"
- },
- {
-  "module": "sport",
-  "time": "2025-01-06",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "自由卧推40kg×12+60kg×10×3；史密斯70kg×2；夹胸50kg×12×2+52.5kg×12×3；单手龙门架夹胸27.5kg×12+35kg×12；双手龙门架上27.5kg×12/中27.5kg×12/下27.5kg×12；上斜哑铃15kg×10×4；肩:哑铃侧平举7.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2025-01-06",
-  "sport": "跑步",
-  "duration": "15"
- },
- {
-  "module": "sport",
-  "time": "2024-12-24",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "自由卧推50kg×12+60kg×10×3+史密斯70kg×4×2；夹胸47.5kg×12+50kg×12×3；哑铃上斜15kg×12+17.5kg×10×3；龙门架夹胸上27.5kg×12×3/中20kg×12×2/下20kg×12×2"
- },
- {
-  "module": "sport",
-  "time": "2024-12-20",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上15kg×10+20kg×10×2+25kg×10×2；器械单臂划船30kg×12×4；高位下拉50kg×12×4；坐姿划船80kg×12×4；铁杆直臂下压42.5kg×12×4"
- },
- {
-  "module": "sport",
-  "time": "2024-12-17",
-  "sport": "健身",
-  "parts": [
-   "胸",
-   "肩"
-  ],
-  "project": "卧推40kg×12+50kg×12+60kg×8+70kg×4；夹胸45kg×12+47.5kg×12×3；杠铃上斜50kg×4+40kg×8×2；哑铃上斜15kg×10×3+17.5kg×8(辅助)；龙门架夹胸单侧上27.5kg×12×3/双中20kg×12×3/双下27.5kg×8+20kg×8×2；肩:哑铃侧平举5kg×10+7.5kg×10×3"
- },
- {
-  "module": "sport",
-  "time": "2024-12-17",
-  "sport": "跑步",
-  "project": "5公里"
- },
- {
-  "module": "sport",
-  "time": "2024-12-12",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "引体向上-15kg×10×3；器械单臂划船30kg×12×4；高位下拉50kg×12×4；坐姿划船80kg×12+87.5kg×12×3；铁杆直臂下压42.5kg×12+50kg×12×3"
- },
- {
-  "module": "sport",
-  "time": "2024-12-12",
-  "sport": "跑步",
-  "duration": "30"
- },
- {
-  "module": "sport",
-  "time": "2024-12-10",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "推胸机(两侧各)20kg×10+35kg×9+30kg×10+30kg×6；龙门架上20kg×12+27.5kg×12×3/中27.5kg×12×3/下20kg×12×3；史密斯50kg×8×3；夹胸47.5kg×10+45kg×10×2+42.5kg×10"
- },
- {
-  "module": "sport",
-  "time": "2024-12-10",
-  "sport": "跑步",
-  "duration": "23"
- },
- {
-  "module": "sport",
-  "time": "2024-10-16",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推60kg；夹胸36kg"
- },
- {
-  "module": "sport",
-  "time": "2024-10-24",
-  "sport": "健身",
-  "parts": [
-   "腿"
-  ],
-  "project": "深蹲60kg；坐姿腿屈伸60磅；臀推40kg；健步走(一边)10kg"
- },
- {
-  "module": "sport",
-  "time": "2024-10-25",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推40kg×1+60kg×4；夹胸42.5kg×4；上斜50kg×4；龙门架夹胸7.5×3+10×1"
- },
- {
-  "module": "sport",
-  "time": "2024-10-29",
-  "sport": "健身",
-  "parts": [
-   "背"
-  ],
-  "project": "低位划船35kg×4；引体向上-35×4；坐姿划船35kg×4；直臂下压17.5×4；坐姿划船41.25×4"
- },
- {
-  "module": "sport",
-  "time": "2024-10-31",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推50kg×1+60kg×4+70kg×1；夹胸42.5×1+46.25×4；上斜哑铃15×4"
- },
- {
-  "module": "sport",
-  "time": "2024-10-31",
-  "sport": "游泳",
-  "project": "（未记录时长）"
- },
- {
-  "module": "sport",
-  "time": "2024-11-09",
-  "sport": "游泳",
-  "duration": "45"
- },
- {
-  "module": "sport",
-  "time": "2024-11-16",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推50kg×12+60kg×8×3；夹胸42.5×2+46.25×2+50；上斜30kg+50kg；龙门架俯身下胸10×10×2+向前全胸10×10×2"
- },
- {
-  "module": "sport",
-  "time": "2024-11-16",
-  "sport": "游泳",
-  "duration": "30"
- },
- {
-  "module": "sport",
-  "time": "2024-11-26",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推50kg+60kg×10×2+60kg×8×2；夹胸42.5kg×10×4；上斜50kg×8×4；卷腹57.5×12×2；夹胸46.25×10×2+10×2"
- },
- {
-  "module": "sport",
-  "time": "2024-11-26",
-  "sport": "游泳",
-  "duration": "30"
- },
- {
-  "module": "sport",
-  "time": "2024-12-03",
-  "sport": "健身",
-  "parts": [
-   "胸"
-  ],
-  "project": "卧推(史密斯)50kg+60kg×12×3+70kg×6；夹胸42.5×12+45×12×3+47.5×10；上斜哑铃15kg×8×2；龙门架夹胸上20kg×12×2/中20kg×12×2/下20kg×8×2"
- },
- {
-  "module": "sport",
-  "time": "2024-12-03",
-  "sport": "跑步",
-  "duration": "30"
- },
- {
-  "id": "house-01",
-  "module": "house",
-  "v": 2,
-  "seq": 1,
-  "time": "",
-  "community": "万家花城二期",
-  "district": "申花",
-  "metro": "5号线萍水街221米",
-  "propType": "商品房",
-  "year": 2009,
-  "school": "大关申花",
-  "area": 89,
-  "totalPrice": 360,
-  "unitPrice": 48459,
-  "downPay": 69,
-  "remark": "性价比、户型小"
- },
- {
-  "id": "house-02",
-  "module": "house",
-  "v": 2,
-  "seq": 2,
-  "time": "",
-  "community": "万家花城一期",
-  "district": "申花",
-  "metro": "5号线萍水街107米",
-  "propType": "商品房",
-  "year": 2008,
-  "school": "大关申花",
-  "area": 88,
-  "totalPrice": 338,
-  "unitPrice": 49317,
-  "downPay": 65,
-  "remark": ""
- },
- {
-  "id": "house-03",
-  "module": "house",
-  "v": 2,
-  "seq": 3,
-  "time": "",
-  "community": "昆仑橡树园",
-  "district": "申花",
-  "metro": "5号线萍水街318米",
-  "propType": "商品房",
-  "year": 2009,
-  "school": "大关申花",
-  "area": 85,
-  "totalPrice": 380,
-  "unitPrice": 49796,
-  "downPay": 73,
-  "remark": ""
- },
- {
-  "id": "house-04",
-  "module": "house",
-  "v": 2,
-  "seq": 4,
-  "time": "",
-  "community": "芳满庭",
-  "district": "申花",
-  "metro": "5号线萍水街935米",
-  "propType": "商品房",
-  "year": 2009,
-  "school": "文津小学、文晖中学",
-  "area": 89,
-  "totalPrice": 320,
-  "unitPrice": 44243,
-  "downPay": 62,
-  "remark": ""
- },
- {
-  "id": "house-05",
-  "module": "house",
-  "v": 2,
-  "seq": 5,
-  "time": "",
-  "community": "东方府邸",
-  "district": "申花",
-  "metro": "5号线萍水街478米",
-  "propType": "商品房",
-  "year": 2014,
-  "school": "大关申花华师大",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 62927,
-  "downPay": null,
-  "remark": "高品质、总价高"
- },
- {
-  "id": "house-06",
-  "module": "house",
-  "v": 2,
-  "seq": 6,
-  "time": "",
-  "community": "金茂悦",
-  "district": "申花",
-  "metro": "5号线萍水街478米",
-  "propType": "商品房",
-  "year": 2016,
-  "school": "文晖实验",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 54162,
-  "downPay": null,
-  "remark": "高品质"
- },
- {
-  "id": "house-07",
-  "module": "house",
-  "v": 2,
-  "seq": 7,
-  "time": "",
-  "community": "上尚庭",
-  "district": "申花",
-  "metro": "5号线萍水街268米",
-  "propType": "商品房",
-  "year": 2013,
-  "school": "育才登云",
-  "area": 81,
-  "totalPrice": 370,
-  "unitPrice": 58660,
-  "downPay": 71,
-  "remark": ""
- },
- {
-  "id": "house-08",
-  "module": "house",
-  "v": 2,
-  "seq": 8,
-  "time": "",
-  "community": "西铭苑",
-  "district": "申花",
-  "metro": "5号线萍水街541米",
-  "propType": "已购公房",
-  "year": null,
-  "school": "文津",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 38981,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-09",
-  "module": "house",
-  "v": 2,
-  "seq": 9,
-  "time": "",
-  "community": "莱德绅华府",
-  "district": "申花",
-  "metro": "5号线萍水街381米",
-  "propType": "商品房",
-  "year": 2014,
-  "school": "育才登云",
-  "area": 87,
-  "totalPrice": 420,
-  "unitPrice": 58085,
-  "downPay": 81,
-  "remark": "绿城物业+性价比"
- },
- {
-  "id": "house-10",
-  "module": "house",
-  "v": 2,
-  "seq": 10,
-  "time": "",
-  "community": "孔雀蓝轩（学院府）",
-  "district": "申花",
-  "metro": "10号线花园岗路395米",
-  "propType": "商品房",
-  "year": 2017,
-  "school": "华师",
-  "area": 89,
-  "totalPrice": 430,
-  "unitPrice": 56459,
-  "downPay": 83,
-  "remark": ""
- },
- {
-  "id": "house-11",
-  "module": "house",
-  "v": 2,
-  "seq": 11,
-  "time": "",
-  "community": "孔雀蓝郡（蓝孔雀）",
-  "district": "申花",
-  "metro": "10号线花园岗路417米",
-  "propType": "商品房",
-  "year": 2017,
-  "school": "华师",
-  "area": 89,
-  "totalPrice": 420,
-  "unitPrice": 54647,
-  "downPay": 81,
-  "remark": "7栋；带院子"
- },
- {
-  "id": "house-12",
-  "module": "house",
-  "v": 2,
-  "seq": 12,
-  "time": "",
-  "community": "雍容华庭",
-  "district": "申花",
-  "metro": "10号线花园岗路723米",
-  "propType": "商品房",
-  "year": 2017,
-  "school": "华师",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 46186,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-13",
-  "module": "house",
-  "v": 2,
-  "seq": 13,
-  "time": "",
-  "community": "雍景湾",
-  "district": "申花",
-  "metro": "10号线花园岗路729米",
-  "propType": "已购公房",
-  "year": 2017,
-  "school": "华师",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 46516,
-  "downPay": null,
-  "remark": "性价比"
- },
- {
-  "id": "house-14",
-  "module": "house",
-  "v": 2,
-  "seq": 14,
-  "time": "",
-  "community": "金地繁华里",
-  "district": "申花",
-  "metro": "10号线渡架桥1.1公里",
-  "propType": "商品房",
-  "year": 2017,
-  "school": "大关、永正实验中学",
-  "area": 89,
-  "totalPrice": 310,
-  "unitPrice": 40893,
-  "downPay": 60,
-  "remark": "只有2排，一排靠高架、一排靠马路"
- },
- {
-  "id": "house-15",
-  "module": "house",
-  "v": 2,
-  "seq": 15,
-  "time": "",
-  "community": "景瑞申花郡",
-  "district": "申花",
-  "metro": "2号线三墩835米",
-  "propType": "商品房",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 40892,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-16",
-  "module": "house",
-  "v": 2,
-  "seq": 16,
-  "time": "",
-  "community": "天阳美林湾",
-  "district": "申花",
-  "metro": "2号线三墩556米",
-  "propType": "商品房",
-  "year": 2008,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 33489,
-  "downPay": null,
-  "remark": "三墩申花交界很老旧"
- },
- {
-  "id": "house-17",
-  "module": "house",
-  "v": 2,
-  "seq": 17,
-  "time": "",
-  "community": "上郡",
-  "district": "申花",
-  "metro": "5号线三坝541米",
-  "propType": "商品房",
-  "year": 2010,
-  "school": "政苑小学、紫金港中学",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 46773,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-18",
-  "module": "house",
-  "v": 2,
-  "seq": 18,
-  "time": "",
-  "community": "国风美域",
-  "district": "西湖申花",
-  "metro": "2号线三墩272米",
-  "propType": "商品房",
-  "year": 2017,
-  "school": "三墩小学中学",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 38200,
-  "downPay": null,
-  "remark": "直有一排、入住率80%"
- },
- {
-  "id": "house-19",
-  "module": "house",
-  "v": 2,
-  "seq": 19,
-  "time": "",
-  "community": "中旅紫金名门",
-  "district": "西湖申花",
-  "metro": "2号线三墩756米",
-  "propType": "商品房",
-  "year": 2016,
-  "school": "三墩小学中学",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 41405,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-20",
-  "module": "house",
-  "v": 2,
-  "seq": 20,
-  "time": "",
-  "community": "望林府",
-  "district": "拱墅万达",
-  "metro": "10号线渡驾桥589米",
-  "propType": "商品房",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 47929,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-21",
-  "module": "house",
-  "v": 2,
-  "seq": 21,
-  "time": "",
-  "community": "华盛达阅城",
-  "district": "拱墅万达",
-  "metro": "10号线祥圆路491米",
-  "propType": "商品房",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 42259,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-22",
-  "module": "house",
-  "v": 2,
-  "seq": 22,
-  "time": "",
-  "community": "中城汇",
-  "district": "拱墅万达",
-  "metro": "10号线渡驾桥119米",
-  "propType": "经济适用房",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 51130,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-23",
-  "module": "house",
-  "v": 2,
-  "seq": 23,
-  "time": "",
-  "community": "吉祥半岛",
-  "district": "桥西",
-  "metro": "5号线大运河575米",
-  "propType": "商品房",
-  "year": null,
-  "school": "文澜",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 59215,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-24",
-  "module": "house",
-  "v": 2,
-  "seq": 24,
-  "time": "",
-  "community": "风景大院",
-  "district": "桥西",
-  "metro": "5号线大运河249米",
-  "propType": "商品房",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 51540,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-25",
-  "module": "house",
-  "v": 2,
-  "seq": 25,
-  "time": "",
-  "community": "亲亲家园4期",
-  "district": "三墩",
-  "metro": "2号线墩祥站221米",
-  "propType": "商品房",
-  "year": 2008,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": 29612,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-26",
-  "module": "house",
-  "v": 2,
-  "seq": 26,
-  "time": "",
-  "community": "西溪公馆",
-  "district": "",
-  "metro": "",
-  "propType": "",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": null,
-  "downPay": null,
-  "remark": "投资客、群租、烂尾"
- },
- {
-  "id": "house-27",
-  "module": "house",
-  "v": 2,
-  "seq": 27,
-  "time": "",
-  "community": "万象城幸福里",
-  "district": "",
-  "metro": "",
-  "propType": "",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": null,
-  "downPay": null,
-  "remark": ""
- },
- {
-  "id": "house-28",
-  "module": "house",
-  "v": 2,
-  "seq": 28,
-  "time": "",
-  "community": "彩虹轩",
-  "district": "",
-  "metro": "",
-  "propType": "",
-  "year": null,
-  "school": "",
-  "area": null,
-  "totalPrice": null,
-  "unitPrice": null,
-  "downPay": null,
-  "remark": ""
- }
-]
+[]
 </script>
 
 <div class="topbar">
@@ -1787,6 +506,8 @@
             </div>
             <div data-stats-cal></div>
             <div class="st-weight" style="margin-top:8px">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
+            <!-- AI 估算密钥：只存本机 localStorage["dashscope-api-key"]，不入源码、不上云 -->
+            <div class="st-weight" style="margin-top:4px">AI 估算密钥 <input type="password" autocomplete="off" spellcheck="false" placeholder="未配置（留空=只用 MET 公式）" data-k="aiKey" style="width:150px;text-align:left"> <span data-ai-key-state style="color:var(--muted)"></span></div>
           </div>
           <!-- 右：运动趋势柱状图 -->
           <div class="stpanel st-chart">
@@ -2153,7 +874,8 @@
 
   var STORE_KEY = "daily-records-v1";
   var MODULES = ["thought","sport","book","house"];
-  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走"];
+  // 「其他」是有氧的正式兜底类目：sport 缺失或不在白名单时归到这里，可见可选、可再手工改。
+  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","其他"];
   var CARDIO = ["游泳","跑步","骑行"];
   var WP = window.WorkoutParse;
 
@@ -2252,14 +974,21 @@
     save();
   }
   function cloudUpsert(r){
-    if(!CLOUD_ON){ return; }
+    // 未连云端(未解锁/离线/CDN 没加载)时不能直接丢掉：写进待办队列，联网后由 flushOutbox 补传，
+    // 否则这次改动只存在于本机，下次 cloudBootstrap 会用云端旧值把它覆盖回去。
+    if(!CLOUD_ON){ queueOp({op:"upsert", id:r.id}); return; }
     SB.from("records").upsert(rowFromRec(r)).then(function(res){
       if(res.error){ console.warn("upsert err", res.error); queueOp({op:"upsert", id:r.id}); setCloudStatus("offline"); }
       else { setCloudStatus("synced"); }
     });
   }
-  function cloudDelete(id){
-    if(!CLOUD_ON){ return; }
+  function cloudDelete(id, notify){
+    // 同上：离线删除必须留痕，否则云端那行原封不动，下次打开又被 merge 回本地 —— 记录"复活"。
+    if(!CLOUD_ON){
+      queueOp({op:"delete", id:id});
+      if(notify) toast("未连云端：已在本机删除，联网解锁后自动同步");
+      return;
+    }
     SB.from("records").delete().eq("id", id).then(function(res){
       if(res.error){ console.warn("delete err", res.error); queueOp({op:"delete", id:id}); setCloudStatus("offline"); }
       else { setCloudStatus("synced"); }
@@ -2278,17 +1007,21 @@
     SB.from("records").select("*").then(function(res){
       if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); setTimeout(autoEstimateAll, 800); return; }
       var cloudById = {};
-      (res.data||[]).forEach(function(row){ var r=recFromRow(row); cloudById[r.id]=r; });
+      // 待办队列里已标记删除的行：云端还留着，但绝不能 merge 回本地。
+      // 否则它会被写进 localStorage，下次打开变成"本地独有"再被推回云端 —— 永远删不掉。
+      var pendingDel = {};
+      (state.pendingOps||[]).forEach(function(o){ if(o.op==="delete" && o.id) pendingDel[o.id]=true; });
+      (res.data||[]).forEach(function(row){ var r=recFromRow(row); if(pendingDel[r.id]) return; cloudById[r.id]=r; });
       // union：本地为基础，云端覆盖同 id（云端权威），本地独有的先保留稍后上推
-      var localOnly = state.records.filter(function(r){ return !cloudById[r.id]; });
+      var localOnly = state.records.filter(function(r){ return !cloudById[r.id] && !pendingDel[r.id]; });
       var merged = {};
       state.records.forEach(function(r){ merged[r.id]=r; });
       Object.keys(cloudById).forEach(function(id){ merged[id]=cloudById[id]; });
       state.records = Object.keys(merged).map(function(k){ return merged[k]; });
-      var removedDup = reconcile();
+      var mergedGym = reconcile();
       mergeSeed();          // now safe: dedups against full cloud+local set
       save(); renderAll(); setCloudStatus("synced");
-      if(removedDup) toast("已合并清理 "+removedDup+" 条重复记录");
+      if(mergedGym) toast("已合并 "+mergedGym+" 条同日健身记录");
       var aliveIds = {}; state.records.forEach(function(r){ aliveIds[r.id]=true; });
       localOnly.forEach(function(r){ if(aliveIds[r.id]) cloudUpsert(r); });   // 把本地独有记录推到云端
       flushOutbox();
@@ -2466,7 +1199,16 @@
   }
 
   // ---------- AI 卡路里估算 (阿里云百炼 / DashScope, OpenAI 兼容) ----------
-  var AI_KEY = "sk-7a5219ecd8094bbe9bfe8aaebd6ea74f";
+  // 密钥不入源码：只存在本机浏览器的 localStorage["dashscope-api-key"]，
+  // 在「运动」页设置区填入。未配置时 AI 估算静默跳过，卡路里回落本地 MET 公式。
+  var AI_KEY_STORE = "dashscope-api-key";
+  function getAiKey(){ try{ return localStorage.getItem(AI_KEY_STORE) || ""; }catch(e){ return ""; } }
+  function setAiKey(v){
+    try{
+      if(v) localStorage.setItem(AI_KEY_STORE, v);
+      else localStorage.removeItem(AI_KEY_STORE);
+    }catch(e){}
+  }
   var AI_ENDPOINT = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
   // build a human-readable description of a strength session for the model
   function strengthDesc(r){
@@ -2517,13 +1259,15 @@
   // 统一 AI 卡路里估算 —— 力量 + 有氧
   function aiKcal(r){
     if(!aiEligible(r)) return Promise.resolve(false);
+    var key = getAiKey();
+    if(!key) return Promise.resolve(false);   // 未配置密钥 → 不发请求，回落 MET 公式
     var desc = (r.sport==="健身") ? strengthDesc(r) : cardioDesc(r);
     var prompt = desc
       + "\n\n请根据以上运动内容，估算这次运动总共消耗的卡路里（千卡）。"
       + "只返回一个整数，不要任何单位、文字或解释。";
     return fetch(AI_ENDPOINT, {
       method:"POST",
-      headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+AI_KEY },
+      headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+key },
       body: JSON.stringify({
         model:"qwen-turbo",
         messages:[
@@ -2708,9 +1452,9 @@
     if(isGym){ r.distance = null; r.distUnit = ""; }
     else {
       r.exercises = [];
-      // 旧数据里 sport 可能是已废弃的「其他」或空值：下拉框无匹配项时会误显示成第一项(游泳)，
-      // 且类型筛选按 sport 精确匹配会漏掉它们。这里统一按 cardioKind 归一到有效类别。
-      if(CARDIO_SPORTS.indexOf(r.sport)<0){ r.sport = cardioKind(r) || "健走"; }
+      // 最小守卫：只兜底 sport 缺失/拼错的情况，避免下拉框无匹配项时静默显示成第一项(游泳)、
+      // 且类型筛选按 sport 精确匹配会漏掉它们。「其他」已是合法类目，显式填写的值不会被改写。
+      if(CARDIO_SPORTS.indexOf(r.sport)<0){ r.sport = "其他"; }
     }
     return r;
   }
@@ -2727,61 +1471,10 @@
     }
     return (r.distance!=null) ? 2 : 0;
   }
-  // Collapse records that share an identical content signature (the duplicates
-  // introduced when unmigrated cloud rows and re-imported seed rows coexisted).
-  // Keeps the richest, then the earliest (stable original id); deletes the rest
-  // both locally and from the cloud. Returns the number removed.
-  function dedupeRecords(){
-    var groups = {};
-    state.records.forEach(function(r){ var s=signature(r); (groups[s]=groups[s]||[]).push(r); });
-    var removed = [];
-    Object.keys(groups).forEach(function(s){
-      var g = groups[s];
-      if(g.length<2) return;
-      g.sort(function(a,b){
-        var ra=recRichness(a), rb=recRichness(b);
-        if(ra!==rb) return rb-ra;                    // richer first
-        return (a.createdAt||0)-(b.createdAt||0);    // then older first (stable id)
-      });
-      for(var i=1;i<g.length;i++) removed.push(g[i]);
-    });
-    if(!removed.length) return 0;
-    var rmIds = {}; removed.forEach(function(r){ rmIds[r.id]=true; });
-    state.records = state.records.filter(function(r){ return !rmIds[r.id]; });
-    save();
-    removed.forEach(function(r){ cloudDelete(r.id); });
-    return removed.length;
-  }
-  // A gym record is "empty" when it has no named exercise and no set carrying
-  // a weight or rep count (the blank-ghost shape: raw " " / " ； ", exercises
-  // like [{name:"",sets:[{w:null,r:null}]}]). Such rows carry zero information.
-  function isEmptyGym(r){
-    if(!r || r.module!=="sport" || r.sport!=="健身") return false;
-    var ex = r.exercises || [];
-    for(var i=0;i<ex.length;i++){
-      if((ex[i].name||"").trim()) return false;
-      var sets = ex[i].sets || [];
-      for(var j=0;j<sets.length;j++){
-        if(sets[j].w!=null || sets[j].r!=null) return false;
-      }
-    }
-    var txt = String(r.note||r.raw||"").replace(/[；;\s]/g,"");
-    return !txt;
-  }
-  // Drop blank gym ghosts. Only runs inside reconcile (load / cloud bootstrap),
-  // never while the user is editing, so a freshly-added-but-unfilled session is
-  // kept until the next reload. Removes locally and from the cloud.
-  function pruneEmptyGym(){
-    var dead = state.records.filter(isEmptyGym);
-    if(!dead.length) return 0;
-    var ids = {}; dead.forEach(function(r){ ids[r.id]=true; });
-    state.records = state.records.filter(function(r){ return !ids[r.id]; });
-    save();
-    dead.forEach(function(r){ cloudDelete(r.id); });
-    return dead.length;
-  }
-  // Normalize every record to the current model, then remove duplicates and
-  // blank gym ghosts. Idempotent and self-healing; safe on every load / sync.
+  // 已移除：dedupeRecords()（自动硬删同签名重复项）与 pruneEmptyGym()/isEmptyGym()（自动硬删空
+  // 健身记录）。这两个原本是一次性数据清洗工具，却挂在启动路径上，每次打开页面都会无确认地
+  // 删除云端行。重复项与空记录现在保留可见，需要清理时手工删除。recRichness 保留，
+  // mergeSameDayGym 仍用它挑选"最丰富"的那条作为合并底记录。
   // 同一天只会有一次健身：把当天多条健身记录合并成一条，动作(去重)与部位全部保留，
   // 绝不丢动作。留存最丰富的一条作底，其余动作/部位并入后删除。消耗沿用底记录(同一次训练不重复累加)。
   function mergeSameDayGym(){
@@ -2804,13 +1497,20 @@
       });
       var base=g[0], exList=[], partSeen={};
       g.forEach(function(r){
+        var clean=[];
         (r.exercises||[]).forEach(function(e){
           var nm=(e&&e.name!=null)?String(e.name).trim():"";
           var hasSet=((e&&e.sets)||[]).some(function(s){ return s && (s.w!=null||s.r!=null); });
           if(!nm && !hasSet) return;              // 丢弃幽灵空动作
-          exList.push(e);                         // 重复动作原样保留、不去重
+          clean.push(e);                          // 单条记录内部的重复动作原样保留、不去重
         });
         (r.parts||[]).forEach(function(p){ if(p) partSeen[p]=1; });
+        if(!clean.length) return;
+        // 防重复追加：整段动作序列若已原样出现在已合并结果里，说明是同一份数据被重复导入/
+        // 重复合并（6-15 那条就是这样被追加了 9 份），整条跳过。用「；」包边避免子串误判。
+        var blk = WP.serializeExercises(clean);
+        if(("；"+WP.serializeExercises(exList)+"；").indexOf("；"+blk+"；")>=0) return;
+        clean.forEach(function(e){ exList.push(e); });
       });
       base.exercises = exList;
       base.parts = PARTS_ALL.filter(function(p){ return partSeen[p]; });
@@ -2829,9 +1529,7 @@
   }
   function reconcile(){
     state.records.forEach(normalizeSportRec);
-    var n = dedupeRecords();
-    n += mergeSameDayGym();
-    return n + pruneEmptyGym();
+    return mergeSameDayGym();
   }
 
   function validate(rec){
@@ -3019,13 +1717,13 @@
     return h+"' "+m+"''";
   }
   // ---------- 力量训练 (strength) ----------
-  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/其他
+  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/爬山/健走/其他
   var PARTS_ALL = ["胸","背","肩","腿"];
   var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
   var SPORT_GREEN = "#10b981";
-  // 有氧运动 4 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕
-  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走"];
-  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8" };
+  // 有氧运动 6 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕 / 健走灰蓝 / 其他中灰
+  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走","其他"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8", "其他":"#a8a29e" };
   // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
   var LAP_KM = 0.05;
   // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
@@ -3041,12 +1739,11 @@
   function cardioKind(r){
     if(!r || r.sport==="健身") return null;
     var sp=r.sport||"";
-    if(sp==="游泳") return "游泳";
-    if(sp==="跑步") return "跑步";
-    if(sp==="骑行" || sp==="骑车") return "骑行";
+    if(sp==="骑车") return "骑行";                        // 历史别名
+    if(CARDIO_SPORTS.indexOf(sp)>=0) return sp;           // 已是合法有氧类目 → 原样尊重
     var txt=(r.note||"")+"|"+(r.raw||"")+"|"+(r.project||"");
-    if(sp==="爬山" || /爬山|登山|徒步|hike/i.test(txt)) return "爬山";
-    return "健走";
+    if(/爬山|登山|徒步|hike/i.test(txt)) return "爬山";    // legacy 自由文本兜底
+    return "其他";                                        // 兜底桶：不再默认塞「健走」
   }
   var strengthFilter = "";   // 部位筛选（空=全部）
   var cardioFilter = "";     // 类型筛选（空=全部）
@@ -3235,7 +1932,7 @@
     if(!r.exercises.length){
       if(!confirm("这条力量训练已无动作，删除整条记录？")){ strengthAddSet(id,-1); return; }
       state.records=state.records.filter(function(x){ return x.id!==id; });
-      save(); cloudDelete(id); renderStrength(); renderStats(); updTotal(); return;
+      save(); cloudDelete(id, true); renderStrength(); renderStats(); updTotal(); return;
     }
     syncStrengthRaw(r); r.updatedAt=Date.now();
     delete r.kcal;
@@ -3257,7 +1954,7 @@
     var r=findSport(id); if(!r) return;
     if(!confirm("确认删除这条力量训练记录？")) return;
     state.records=state.records.filter(function(x){ return x.id!==id; });
-    save(); cloudDelete(id); renderStrength(); renderStats(); updTotal();
+    save(); cloudDelete(id, true); renderStrength(); renderStats(); updTotal();
   }
 
   // ---------- 有氧训练 (cardio) ----------
@@ -3368,7 +2065,7 @@
     var r=findSport(id); if(!r) return;
     if(!confirm("确认删除这条有氧训练记录？")) return;
     state.records=state.records.filter(function(x){ return x.id!==id; });
-    save(); cloudDelete(id); renderCardio(); renderStats(); updTotal();
+    save(); cloudDelete(id, true); renderCardio(); renderStats(); updTotal();
   }
 
   function updTotal(){ var t=document.getElementById("totalCount"); if(t) t.textContent="共 "+state.records.length+" 条"; }
@@ -3643,7 +2340,7 @@
             : "确认删除这条记录？";
     if(!confirm(msg)) return;
     state.records=state.records.filter(function(x){ return x.id!==id; });
-    save(); cloudDelete(id); renderAfterChange(m);
+    save(); cloudDelete(id, true); renderAfterChange(m);
   }
   function migrateHouse(){
     var before=state.records.length;
@@ -3783,8 +2480,16 @@
     // reflect current weight into the input
     var wIn = document.querySelector('[data-k="weightKg"]');
     if(wIn && document.activeElement!==wIn) wIn.value = (state.profile&&state.profile.weightKg)||DEFAULT_PROFILE.weightKg;
+    renderAiKeyState();
     renderStatsLeft();
     renderStatsChart();
+  }
+  // AI 密钥只回显掩码（末 4 位），输入框本身不预填明文，避免密钥被截图/围观泄露
+  function renderAiKeyState(){
+    var box = document.querySelector("[data-ai-key-state]");
+    if(!box) return;
+    var k = getAiKey();
+    box.textContent = k ? ("已配置 ····"+k.slice(-4)) : "未配置：AI 估算关闭，卡路里用 MET 公式";
   }
   // 左侧：3 块总览 (有氧时长 / 力量次数+部位 / 消耗) + 始终展示的运动日历
   function renderStatsLeft(){
@@ -3821,7 +2526,7 @@
         var mins = num(r.duration)||0;
         if(mins>0){
           cardioTotalDur += mins;
-          var k = cardioKind(r)||"健走";
+          var k = cardioKind(r)||"其他";
           cardioDurByKind[k] = (cardioDurByKind[k]||0) + mins;
         }
       }
@@ -3856,7 +2561,7 @@
       var calChips = SPORTS.map(function(sp){
         var c = calBySport[sp]||0; if(!(c>0)) return "";
         var color = (sp==="健身") ? "#7c3aed"
-                  : (CARDIO_COLORS[cardioKind({sport:sp})||"健走"]||SPORT_GREEN);
+                  : (CARDIO_COLORS[cardioKind({sport:sp})||"其他"]||SPORT_GREEN);
         return '<span class="ov-chip"><i style="background:'+color+'"></i>'+esc(sp)+' '+c.toLocaleString()+'</span>';
       }).filter(function(x){return x;}).join("");
       var calBlock = '<div class="ov-block">'
@@ -3990,7 +2695,7 @@
         pieces.push({ t:g.t, html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
       });
       cardioRecs.forEach(function(r){
-        var k = cardioKind(r)||"健走";
+        var k = cardioKind(r)||"其他";
         var ccolor = CARDIO_COLORS[k];
         var label = r.sport||k;
         var badgesHTML = '<span class="bd-badge" style="background:'+ccolor+'">'+esc(label)+'</span>';
@@ -4051,7 +2756,7 @@
       var key=d.getDate();
       if(!map[key]) map[key]={ parts:{}, gym:false, cardio:{} };
       if(r.sport==="健身"){ map[key].gym=true; (r.parts||[]).forEach(function(p){ map[key].parts[p]=true; }); }
-      else { var k=cardioKind(r)||"健走"; map[key].cardio[k]=true; }
+      else { var k=cardioKind(r)||"其他"; map[key].cardio[k]=true; }
     });
     var firstDow=(new Date(y,m,1).getDay()+6)%7; // 周一=0
     var days=new Date(y,m+1,0).getDate();
@@ -4120,7 +2825,7 @@
       rows += '<div class="cd-row">'+badges+'<span class="cd-body">'+esc(body)+'</span></div>';
     }
     rows += cardioRecs.map(function(r){
-      var k = cardioKind(r)||"健走";
+      var k = cardioKind(r)||"其他";
       var ccolor = CARDIO_COLORS[k];
       var bits=[];
       if(r.distance!=null) bits.push(r.distance+(r.distUnit||""));
@@ -4479,6 +3184,15 @@
       var w=num(wIn.value);
       if(w && w>=30 && w<=200){ state.profile.weightKg=w; save(); renderAll(); }
       else { wIn.value=state.profile.weightKg; }
+    });
+
+    // AI 估算密钥：只写本机 localStorage，不进 state、不上云
+    var kIn=document.querySelector('[data-k="aiKey"]');
+    if(kIn) kIn.addEventListener("change", function(){
+      var v=(kIn.value||"").trim();
+      setAiKey(v);
+      renderAiKeyState();
+      toast(v ? "AI 估算密钥已保存到本机" : "已清除本机 AI 估算密钥");
     });
 
     // search
