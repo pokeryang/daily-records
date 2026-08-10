@@ -494,10 +494,8 @@
             <div class="st-weight" style="margin-top:8px">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
             <!-- AI 估算密钥：只存本机 localStorage["dashscope-api-key"]，不入源码、不上云 -->
             <div class="st-weight" style="margin-top:4px">AI 估算密钥 <input type="password" autocomplete="off" spellcheck="false" placeholder="未配置（留空=只用 MET 公式）" data-k="aiKey" style="width:150px;text-align:left"> <span data-ai-key-state style="color:var(--muted)"></span></div>
-            <!-- 维护工具：这两件事原来每次打开页面自动跑并直接改云端，现已改为手动触发 -->
+            <!-- AI 补算卡路里：原来每次打开页面自动跑，现改为手动触发 -->
             <div class="st-weight" style="margin-top:6px">
-              维护工具
-              <button type="button" class="btn tiny ghost" data-tool="mergeGym">合并同日健身</button>
               <button type="button" class="btn tiny ghost" data-tool="aiKcal">AI 补算卡路里</button>
             </div>
           </div>
@@ -1474,77 +1472,14 @@
     }
     return r;
   }
-  function recRichness(r){
-    if(r.module!=="sport") return 0;
-    if(r.sport==="健身"){
-      var ex=r.exercises||[], real=0, junk=0;
-      ex.forEach(function(e){
-        var nm=(e&&e.name!=null)?String(e.name).trim():"";
-        var hasSet=((e&&e.sets)||[]).some(function(s){ return s && (s.w!=null||s.r!=null); });
-        if(nm||hasSet) real++; else junk++;
-      });
-      return real*10 + ((r.parts && r.parts.length) ? 1 : 0) - junk;  // 干净副本(无幽灵空动作)优先胜出
-    }
-    return (r.distance!=null) ? 2 : 0;
-  }
-  // 已移除：dedupeRecords()（自动硬删同签名重复项）与 pruneEmptyGym()/isEmptyGym()（自动硬删空
-  // 健身记录）。这两个原本是一次性数据清洗工具，却挂在启动路径上，每次打开页面都会无确认地
-  // 删除云端行。重复项与空记录现在保留可见，需要清理时手工删除。recRichness 保留，
-  // mergeSameDayGym 仍用它挑选"最丰富"的那条作为合并底记录。
-  // 同一天只会有一次健身：把当天多条健身记录合并成一条，动作(去重)与部位全部保留，
-  // 绝不丢动作。留存最丰富的一条作底，其余动作/部位并入后删除。消耗沿用底记录(同一次训练不重复累加)。
-  function mergeSameDayGym(){
-    var groups={}, order=[];
-    state.records.forEach(function(r){
-      if(r.module==="sport" && r.sport==="健身"){
-        var day=String(r.time||"").slice(0,10);
-        if(!groups[day]){ groups[day]=[]; order.push(day); }
-        groups[day].push(r);
-      }
-    });
-    var removed=[], changed=[];
-    order.forEach(function(day){
-      var g=groups[day];
-      if(g.length<2) return;
-      g.sort(function(a,b){
-        var ra=recRichness(a), rb=recRichness(b);
-        if(ra!==rb) return rb-ra;                 // 最丰富的作底
-        return (a.createdAt||0)-(b.createdAt||0); // 再取最早(稳定 id)
-      });
-      var base=g[0], exList=[], partSeen={};
-      g.forEach(function(r){
-        var clean=[];
-        (r.exercises||[]).forEach(function(e){
-          var nm=(e&&e.name!=null)?String(e.name).trim():"";
-          var hasSet=((e&&e.sets)||[]).some(function(s){ return s && (s.w!=null||s.r!=null); });
-          if(!nm && !hasSet) return;              // 丢弃幽灵空动作
-          clean.push(e);                          // 单条记录内部的重复动作原样保留、不去重
-        });
-        (r.parts||[]).forEach(function(p){ if(p) partSeen[p]=1; });
-        if(!clean.length) return;
-        // 防重复追加：整段动作序列若已原样出现在已合并结果里，说明是同一份数据被重复导入/
-        // 重复合并（6-15 那条就是这样被追加了 9 份），整条跳过。用「；」包边避免子串误判。
-        var blk = WP.serializeExercises(clean);
-        if(("；"+WP.serializeExercises(exList)+"；").indexOf("；"+blk+"；")>=0) return;
-        clean.forEach(function(e){ exList.push(e); });
-      });
-      base.exercises = exList;
-      base.parts = PARTS_ALL.filter(function(p){ return partSeen[p]; });
-      syncStrengthRaw(base);
-      base.updatedAt = Date.now();
-      changed.push(base);
-      for(var i=1;i<g.length;i++) removed.push(g[i]);
-    });
-    if(!removed.length && !changed.length) return 0;
-    var rmIds={}; removed.forEach(function(r){ rmIds[r.id]=true; });
-    if(removed.length) state.records = state.records.filter(function(r){ return !rmIds[r.id]; });
-    save();
-    changed.forEach(function(r){ cloudUpsert(r); });
-    removed.forEach(function(r){ cloudDelete(r.id); });
-    return removed.length;
-  }
-  // 已移除：reconcile()。它把"归一化运动类型"和"合并同日健身(含删云端行)"打包挂在启动路径上，
-  // 每次打开页面都自动改云端。mergeSameDayGym() 保留，但现在只由「合并同日健身」按钮手动触发。
+  // 已移除的一次性数据清洗逻辑，全部不再存在：
+  //   dedupeRecords()  自动硬删同签名重复项
+  //   pruneEmptyGym()  自动硬删"空健身"记录
+  //   mergeSameDayGym()/recRichness()  按日期把同一天的多条健身合并成一条并删除其余行
+  //   reconcile()      启动时改写运动类型 + 触发上面的合并
+  // 它们都是批量导入历史数据时的临时工具，却常驻在页面上反复执行，改你手动修过的数据、
+  // 补你主动删掉的记录。现在的规则只有一条：你录几条就是几条，原样存、原样显示，
+  // 不合并、不去重、不改写。要清理请自己删。
 
   function validate(rec){
     if(!rec || MODULES.indexOf(rec.module)<0) return null;
@@ -1603,13 +1538,7 @@
       return { name:name, sets:sets };
     }).filter(function(ex){ return ex.name || ex.sets.length; });
   }
-  // 单个动作的签名，用于同一天健身合并时对动作去重(相同动作+组次不重复叠加)。
-  function exSig(ex){
-    var name=(ex&&ex.name!=null)?String(ex.name).trim():"";
-    var sets=((ex&&ex.sets)||[]).filter(function(s){ return s && (s.w!=null||s.r!=null||(s.extra&&String(s.extra).trim())); })
-      .map(function(s){ return [s.w==null?"":s.w, s.unit||"", s.r==null?"":s.r, s.n==null?"":s.n, s.pos||"", s.extra||""].join("/"); }).join("+");
-    return name+"@"+sets;
-  }
+  // 已移除：exSig()。它只服务于"同日健身合并时对动作去重"，该合并逻辑已整体删除。
   function signature(r){
     if(r.module==="thought") return "T|"+r.time+"|"+r.content;
     if(r.module==="sport"){
@@ -2500,9 +2429,9 @@
     });
     var cardioDurByKind = {};   // 分类型累计有氧分钟
     var cardioTotalDur = 0;
-    var strengthDayset = {};    // 力量按天去重: dayKey -> true
-    var strengthDaysetByPart = {}; // 部位 -> Set(dayKey)
-    PARTS_ALL.forEach(function(p){ strengthDaysetByPart[p] = {}; });
+    var strengthCount = 0;      // 力量训练次数：有几条记录就是几次，不按日期去重
+    var strengthCountByPart = {}; // 部位 -> 记录条数
+    PARTS_ALL.forEach(function(p){ strengthCountByPart[p] = 0; });
     var totalCal = 0;
     var calBySport = {};
     rows.forEach(function(r){
@@ -2511,14 +2440,10 @@
       if(!calBySport[sp]) calBySport[sp] = 0;
       calBySport[sp] += c;
       if(r.sport==="健身"){
-        var d = recDate(r);
-        var dk = d ? ymd(d) : "";
-        if(dk){
-          strengthDayset[dk] = true;
-          (r.parts||[]).forEach(function(p){
-            if(strengthDaysetByPart[p]) strengthDaysetByPart[p][dk] = true;
-          });
-        }
+        strengthCount++;
+        (r.parts||[]).forEach(function(p){
+          if(p in strengthCountByPart) strengthCountByPart[p]++;
+        });
       }else{
         var mins = num(r.duration)||0;
         if(mins>0){
@@ -2528,7 +2453,7 @@
         }
       }
     });
-    var strengthDayCount = Object.keys(strengthDayset).length;
+    var strengthDayCount = strengthCount;
     var periodName = periodLabel(now, statsRange);
     var overview;
     if(!rows.length){
@@ -2546,7 +2471,7 @@
         + '</div>';
       // 力量块
       var partChips = PARTS_ALL.map(function(p){
-        var c = Object.keys(strengthDaysetByPart[p]||{}).length;
+        var c = strengthCountByPart[p]||0;
         return '<span class="ov-chip"><i style="background:'+PART_COLORS[p]+'"></i>'+esc(p)+' '+c+'</span>';
       }).join("");
       var strengthBlock = '<div class="ov-block">'
@@ -2666,30 +2591,20 @@
       }).sort(function(a,b){ return (a.time||"").localeCompare(b.time||""); });
       var title = isYear ? (scopeY+' 年 '+sel+' 月') : (scopeY+'/'+(scopeM+1)+'/'+sel);
       if(!recs.length) return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div><div class="bd-empty">该区间暂无数据</div></div>';
-      // 统计展示：健身按天合并（动作名/部位去重只显示一次），有氧仍按每条展示；
-      // 消耗不在此处展示，但底层始终按真实累加，不因合并而丢失。
+      // 展示口径：有几条记录就显示几行，健身也不再按日期合并。
       var gymRecs=recs.filter(function(r){ return r.sport==="健身"; });
       var cardioRecs=recs.filter(function(r){ return r.sport!=="健身"; });
-      // 把健身记录按日期分组：年视角跨多天，月视角同一天
-      var gymGroups={}, gymOrder=[];
-      gymRecs.forEach(function(r){
-        var d=recDate(r); if(!d) return;
-        var key=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-        if(!gymGroups[key]){ gymGroups[key]={ list:[], date:d, t:(r.time||"") }; gymOrder.push(key); }
-        gymGroups[key].list.push(r);
-        if((r.time||"") < gymGroups[key].t || !gymGroups[key].t) gymGroups[key].t=(r.time||"");
-      });
       var pieces=[];
-      gymOrder.forEach(function(key){
-        var g=gymGroups[key];
-        var parts=gymPartsUnion(g.list);
+      gymRecs.forEach(function(r){
+        var parts=(r.parts||[]).filter(function(p){ return p; });
         var badgesHTML = parts.length
           ? parts.map(function(p){ return '<span class="bd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
           : '<span class="bd-badge" style="background:#94a3b8">力量</span>';
-        var names=gymNamesUnion(g.list);
+        var names=gymNames(r);
         var body = names.length ? names.join("、") : "（未填动作）";
-        var dstr = isYear ? ((g.date.getMonth()+1)+"/"+g.date.getDate()+" ") : "";
-        pieces.push({ t:g.t, html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
+        var dp = recDate(r);
+        var dstr = isYear && dp ? ((dp.getMonth()+1)+"/"+dp.getDate()+" ") : "";
+        pieces.push({ t:(r.time||""), html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
       });
       cardioRecs.forEach(function(r){
         var k = cardioKind(r)||"其他";
@@ -2781,23 +2696,15 @@
     if(calSelDay && map[calSelDay]) html+=calDayDetailHTML(y,m,calSelDay);
     return html;
   }
-  // ---- 统计展示去重辅助（仅去重"项目/动作名"，不影响消耗累加） ----
-  // 汇总一组健身记录里的唯一动作名（跨记录合并，保持首次出现顺序）
-  function gymNamesUnion(list){
+  // ---- 展示辅助：单条健身记录内部的动作名去重（保持首次出现顺序）----
+  // 只在一条记录内部去重，绝不跨记录合并——同一天有几条就是几条。
+  function gymNames(r){
     var seen={}, out=[];
-    (list||[]).forEach(function(r){
-      (r.exercises||[]).forEach(function(e){
-        var n=(e&&e.name!=null)?String(e.name).trim():"";
-        if(n && !seen[n]){ seen[n]=1; out.push(n); }
-      });
+    ((r&&r.exercises)||[]).forEach(function(e){
+      var n=(e&&e.name!=null)?String(e.name).trim():"";
+      if(n && !seen[n]){ seen[n]=1; out.push(n); }
     });
     return out;
-  }
-  // 汇总一组健身记录里的唯一训练部位（跨记录合并，保持 PARTS_ALL 顺序）
-  function gymPartsUnion(list){
-    var seen={};
-    (list||[]).forEach(function(r){ (r.parts||[]).forEach(function(p){ if(p) seen[p]=1; }); });
-    return PARTS_ALL.filter(function(p){ return seen[p]; });
   }
   // detail panel for a clicked calendar day: strength = 部位 + 项目名;
   // cardio = 项目 + 时长 + 距离.
@@ -2808,19 +2715,19 @@
     });
     var head='<div class="cd-date">'+y+' 年 '+(m+1)+' 月 '+dd+' 日</div>';
     if(!recs.length) return '<div class="cal-detail">'+head+'<div class="cd-empty">这天没有运动记录</div></div>';
-    // 健身：当天所有力量记录合并成一行，动作名/部位去重只显示一次（消耗不在此展示，仍按真实累加）
+    // 展示口径：这天有几条记录就显示几行，健身也不合并。
     var gymRecs=recs.filter(function(r){ return r.sport==="健身"; });
     var cardioRecs=recs.filter(function(r){ return r.sport!=="健身"; });
     var rows="";
-    if(gymRecs.length){
-      var parts=gymPartsUnion(gymRecs);
+    rows += gymRecs.map(function(r){
+      var parts=(r.parts||[]).filter(function(p){ return p; });
       var badges = parts.length
         ? parts.map(function(p){ return '<span class="cd-badge" style="background:'+(PART_COLORS[p]||"#94a3b8")+'">'+esc(p)+'</span>'; }).join("")
         : '<span class="cd-badge" style="background:#94a3b8">力量</span>';
-      var names=gymNamesUnion(gymRecs);
+      var names=gymNames(r);
       var body=names.length ? names.join("、") : "（未填动作）";
-      rows += '<div class="cd-row">'+badges+'<span class="cd-body">'+esc(body)+'</span></div>';
-    }
+      return '<div class="cd-row">'+badges+'<span class="cd-body">'+esc(body)+'</span></div>';
+    }).join("");
     rows += cardioRecs.map(function(r){
       var k = cardioKind(r)||"其他";
       var ccolor = CARDIO_COLORS[k];
@@ -3192,24 +3099,7 @@
       toast(v ? "AI 估算密钥已保存到本机" : "已清除本机 AI 估算密钥");
     });
 
-    // 维护工具：原来这两件事在每次打开页面时自动跑、直接改云端，现在只有点按钮才执行
-    var mgBtn=document.querySelector('[data-tool="mergeGym"]');
-    if(mgBtn) mgBtn.addEventListener("click", function(){
-      var days={}, dup=0;
-      state.records.forEach(function(r){
-        if(r.module==="sport" && r.sport==="健身"){
-          var d=String(r.time||"").slice(0,10);
-          days[d]=(days[d]||0)+1;
-          if(days[d]===2) dup++;
-        }
-      });
-      if(!dup){ toast("没有同日重复的健身记录，无需合并"); return; }
-      if(!confirm("发现 "+dup+" 天存在多条健身记录。\n合并会把这些天的动作并到一条里，并删除多余的行（云端同步删除）。\n确认合并？")) return;
-      var n=mergeSameDayGym();
-      renderAll();
-      toast(n ? ("已合并 "+dup+" 天，删除 "+n+" 条多余记录") : "无需合并");
-    });
-
+    // AI 补算卡路里：原来每次打开页面自动跑并直接改云端，现在只有点按钮才执行
     var aiBtn=document.querySelector('[data-tool="aiKcal"]');
     if(aiBtn) aiBtn.addEventListener("click", function(){
       if(!getAiKey()){ toast("请先在上方填入 AI 估算密钥", true); return; }
