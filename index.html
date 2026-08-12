@@ -466,8 +466,8 @@
 <div class="wrap">
   <div class="grid">
 
-    <!-- 1. 运动日历 -->
-    <section class="card wide" data-m="sportcal">
+    <!-- 1. 运动日历（与运动趋势同排，左右各半） -->
+    <section class="card" data-m="sportcal">
       <div class="accent"></div>
       <div class="card-head">
         <div class="dot">&#128197;</div>
@@ -478,8 +478,8 @@
       </div>
     </section>
 
-    <!-- 1b. 运动趋势 -->
-    <section class="card wide" data-m="sporttrend">
+    <!-- 1b. 运动趋势（与运动日历同排，左右各半） -->
+    <section class="card" data-m="sporttrend">
       <div class="accent"></div>
       <div class="card-head">
         <div class="dot">&#128200;</div>
@@ -1487,6 +1487,13 @@
     if(a!=null && a>0 && t!=null && t>0) return Math.round(t*10000/a);
     return num(rec && rec.unitPrice);
   }
+  // 本次页数和单价一样是派生值：有起止页就现算，别去信库里存的那个数。
+  // 云端有一批老书记录只有 fromPage/toPage、没写过 pagesRead，读库直接渲染就是一片空白。
+  function bookPages(rec){
+    var fp=num(rec && rec.fromPage), tp=num(rec && rec.toPage);
+    if(fp!=null && tp!=null) return Math.max(0, tp-fp);
+    return num(rec && rec.pagesRead);
+  }
   // strict=true 只给「导入 JSON」用：那里要把残缺行挡在门外。
   // 表格里的日常编辑一律走 strict=false —— 内容/书名/小区名可以先空着，日期照样能存，
   // 不然新加一行想先填日期再填内容，日期会被整行丢弃。
@@ -1505,7 +1512,7 @@
       if(strict && !rec.book) return null;
       var fp=num(rec.fromPage), tp=num(rec.toPage);
       r.book=rec.book==null?"":String(rec.book).trim(); r.fromPage=fp; r.toPage=tp;
-      r.pagesRead = (fp!=null && tp!=null) ? Math.max(0, tp-fp) : null;
+      r.pagesRead = bookPages(r);
       r.note = rec.note ? String(rec.note).trim() : "";
     }else if(rec.module==="house"){
       if(strict && !rec.community) return null;
@@ -2128,7 +2135,8 @@
       if(k==="duration") return (r.duration==null||r.duration==="") ? "" : r.duration;
       return r[k]==null ? "" : r[k];
     }
-    if(m==="book" && k==="pagesRead") return (r.pagesRead!=null) ? r.pagesRead : "";
+    // 本次页数是纯派生值：一律按起页/止页现算，改起止页立刻跟着变
+    if(m==="book" && k==="pagesRead"){ var pg=bookPages(r); return pg==null ? "" : pg; }
     // 单价是纯派生值：一律现算，不看库里存的那个数，改总价/面积立刻跟着变
     if(m==="house" && k==="unitPrice"){ var up=houseUnitPrice(r); return up==null ? "" : up; }
     return r[k]==null ? "" : r[k];
