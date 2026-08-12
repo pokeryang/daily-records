@@ -373,9 +373,12 @@
   /* durc 是 <td class="num durc"> 本身，不是 td 的后代：写成 "td .durc" 会匹配不到任何元素，
      通用的 table.htable td .hc{padding:7px 9px} 就会赢，分钟输入框被裁成 "3(" */
   table.htable td.durc{padding:0 2px}
-  table.htable td.durc input.hc{width:30px; flex:0 0 30px; text-align:center; padding:2px 2px}
-  /* 标签左右不留内边距：有氧表内容最小宽正好卡在容器边界上，这 4px 就是横向滚动条的开关 */
-  .durc .du-unit{font-size:11px; color:#6b7c99; padding:0}
+  /* 输入框右对齐 + 等宽数字：居中对齐时「0」和「30」在各行之间左右乱跳，一列数字看着是错的。
+     宽度 30→25、标签补 2px 左内边距，数字紧贴「小时/分钟」，整列比原来窄 6px ——
+     正好把带游泳配速(2'30"/100m)那种最宽内容时的横向滚动条也消掉。 */
+  table.htable td.durc input.hc{width:25px; flex:0 0 25px; text-align:right; padding:2px 1px; font-variant-numeric:tabular-nums}
+  /* 标签只留左内边距（隔开数字），右侧不留：有氧表内容最小宽正好卡在容器边界上，多几 px 就是横向滚动条的开关 */
+  .durc .du-unit{font-size:11px; color:#6b7c99; padding:0 0 0 2px}
   /* 上面加宽的 8px 从时间列的内边距里省回来：日期文本本身只要 ~72px */
   table.htable.auto.cardio input[type="date"]{padding-left:4px; padding-right:4px}
   /* 配速文本最长是 2'40"/100m，字号收一档，省下的宽度留给「操作」列 */
@@ -970,11 +973,16 @@
     state.pendingOps.push(op);
     save();
   }
+  // 正在飞的 upsert：请求已发出但还没回来。重新拉取云端时这批 id 必须保住，
+  // 否则「刚加的一行」会在 SELECT 里查不到，被当成"别处已删"从本地抹掉。
+  var _inflight = {};
   function cloudUpsert(r){
     // 未连云端(未解锁/离线/CDN 没加载)时不能直接丢掉：写进待办队列，联网后由 flushOutbox 补传，
     // 否则这次改动只存在于本机，下次 cloudBootstrap 会用云端旧值把它覆盖回去。
     if(!CLOUD_ON){ queueOp({op:"upsert", id:r.id}); return; }
+    _inflight[r.id] = true;
     SB.from("records").upsert(rowFromRec(r)).then(function(res){
+      delete _inflight[r.id];
       if(res.error){ console.warn("upsert err", res.error); queueOp({op:"upsert", id:r.id}); setCloudStatus("offline"); }
       else { setCloudStatus("synced"); }
     });
@@ -1000,9 +1008,9 @@
       else if(o.op==="upsert"){ var r=state.records.find(function(x){return x.id===o.id;}); if(r) cloudUpsert(r); }
     });
   }
-  function cloudBootstrap(){
+  function cloudBootstrap(done){
     SB.from("records").select("*").then(function(res){
-      if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); return; }
+      if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); if(done) done(false); return; }
 
       // ===== 同步契约：云端权威 =====
       // 本地 localStorage 只是云端的一份镜像 + 一个离线改动的待发件箱，它不是数据源。
@@ -1027,6 +1035,7 @@
       state.records.forEach(function(r){
         if(cloudById[r.id]) return;                       // 云端已有，用云端版本
         if(pendingUp[r.id]){ next.push(r); return; }      // 离线新增/修改，待补传，保留
+        if(_inflight[r.id]){ next.push(r); return; }      // upsert 还在飞，SELECT 可能比它先到，别当成"已删"
         dropped.push(r);                                  // 其余：已在别处删除
       });
 
@@ -1041,12 +1050,45 @@
         console.warn("[sync] 本地多出 "+dropped.length+" 条云端已不存在的记录，按云端为准移除", dropped);
       }
 
+      // 只有真的变了才重画：定时兜底每分钟拉一次，无变化时不能把页面重渲一遍
+      // （会打断滚动位置、收起展开的行）。签名用 id|updated_at，比对整份数据便宜得多。
+      var sig = cloudSig(res.data);
+      var changed = (sig !== _cloudSig) || dropped.length > 0;
+      _cloudSig = sig;
+
       state.records = next;
-      save(); renderAll(); setCloudStatus("synced");
+      if(changed || !done){ save(); if(done) realtimeRender(); else renderAll(); }
+      setCloudStatus("synced");
       flushOutbox();
       subscribeRealtime();
+      if(done) done(true);
     });
   }
+  var _cloudSig = "";
+  function cloudSig(rows){
+    var a = [];
+    (rows||[]).forEach(function(row){ a.push(row.id + "|" + (row.updated_at||"")); });
+    a.sort();
+    return a.length + ":" + a.join(",");
+  }
+  // ---- 主动兜底拉取 ----
+  // 实时订阅只有 DELETE 能穿过 RLS 送达（websocket 带不上 x-app-secret 头，INSERT/UPDATE 事件被服务端过滤掉），
+  // 所以另一台设备的「新增/修改」，在这台一直开着的页面上原本要等手动刷新才看得见。
+  // 这里补三个触发点：切回标签页、窗口重新获得焦点、页面可见时每 60 秒一次。
+  var _refreshAt = 0, _refreshing = false;
+  function cloudRefresh(force){
+    if(!CLOUD_ON || !SB) return;
+    if(document.hidden) return;                      // 后台标签页不拉
+    if(_refreshing) return;                          // 单飞：上一次还没回来
+    if(isUserEditing()) return;                      // 正在输入时不碰 DOM
+    var now = Date.now();
+    if(!force && now - _refreshAt < 5000) return;    // 5 秒防抖：focus 和 visibilitychange 常常连着来
+    _refreshAt = now; _refreshing = true;
+    cloudBootstrap(function(){ _refreshing = false; });
+  }
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) cloudRefresh(); });
+  window.addEventListener("focus", function(){ cloudRefresh(); });
+  setInterval(function(){ cloudRefresh(); }, 60000);
   var _realtimeRenderPending = false;
   function isUserEditing(){
     var ae = document.activeElement;
@@ -1067,8 +1109,12 @@
       renderAll();
     }
   }
+  var _rtSub = false;
   function subscribeRealtime(){
-    if(!CLOUD_ON) return;
+    // 兜底刷新会反复调用 cloudBootstrap，这里必须只订阅一次，否则每分钟叠一条 websocket 频道，
+    // 同一个 DELETE 事件会被处理 N 次。
+    if(!CLOUD_ON || _rtSub) return;
+    _rtSub = true;
     try{
       SB.channel("records-sync")
         .on("postgres_changes", {event:"*", schema:"public", table:"records"}, function(payload){
@@ -1082,7 +1128,7 @@
             save(); realtimeRender();
           }
         }).subscribe();
-    }catch(e){ console.warn("realtime failed", e); }
+    }catch(e){ _rtSub = false; console.warn("realtime failed", e); }
   }
   window.addEventListener("online", flushOutbox);
 
