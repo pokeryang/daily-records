@@ -183,8 +183,12 @@
   /* Generalized spreadsheet (thought / sport / book reuse .htable) */
   table.htable.auto{min-width:0}
   /* 有氧表格的列都是定宽：容器不够时宁可让 .htable-wrap 横向滚动，也不要等比压缩到
-     「类型」下拉只剩一个字、「时长」分钟数字被切掉。522px = 各列声明宽度之和。 */
+     「类型」下拉只剩一个字、「时长」分钟数字被切掉。522px ≈ 卡片宽度上限，再宽会把
+     「操作」列顶出可视区。 */
   table.htable.auto.cardio{min-width:522px}
+  /* auto 布局下 <select> 的 intrinsic 宽度极小，被压缩时第一个牺牲它（「跑步」只剩「跑」）。
+     给个下限兜住两三个字的类型名。 */
+  table.htable.auto.cardio select.hc{min-width:66px}
   table.htable td select.hc{
     width:100%; border:none; background:transparent; padding:7px 6px; font-size:13px;
     color:var(--ink); outline:none; appearance:auto; -webkit-appearance:auto;
@@ -207,9 +211,9 @@
   .row-del:hover{opacity:1; background:#fdecec}
 
   /* split sport: 力量训练 / 有氧训练 / 运动统计 reuse sport colors */
-  .card[data-m="strength"] .dot,.card[data-m="cardio"] .dot,.card[data-m="sportstats"] .dot{background:var(--sport-soft)}
-  .card[data-m="strength"] .accent,.card[data-m="cardio"] .accent,.card[data-m="sportstats"] .accent{background:var(--sport)}
-  .card[data-m="sportstats"] .pill.on{background:var(--sport); border-color:var(--sport); color:#fff}
+  .card[data-m="strength"] .dot,.card[data-m="cardio"] .dot,.card[data-m="sportcal"] .dot,.card[data-m="sporttrend"] .dot{background:var(--sport-soft)}
+  .card[data-m="strength"] .accent,.card[data-m="cardio"] .accent,.card[data-m="sportcal"] .accent,.card[data-m="sporttrend"] .accent{background:var(--sport)}
+  .card[data-m="sporttrend"] .pill.on{background:var(--sport); border-color:var(--sport); color:#fff}
   .sheet-add{margin-top:10px; width:100%; padding:9px 0; border:1px solid var(--line-strong); border-radius:999px;
     background:#f7f9ff; color:#5b6b8c; font-size:13px; font-weight:600; cursor:pointer; transition:.12s}
   .sheet-add:hover{background:#eef4ff; color:var(--sport); border-color:var(--sport)}
@@ -333,9 +337,8 @@
   .st-metric.kcal b{color:#c2410c}
   .st-break{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
   .st-break span{font-size:11.5px; background:var(--sport-soft); color:#0a7d5b; padding:2px 8px; border-radius:999px}
-  .st-empty{font-size:12px; color:var(--muted); padding:4px 0}
-  .st-weight{font-size:11px; color:var(--muted)}
-  .st-weight input{width:46px; padding:2px 4px; font-size:11px; text-align:center; margin:0 2px}
+  .st-weight{font-size:12.5px; color:var(--ink)}
+  .st-weight input{width:64px; padding:4px 6px; font-size:12.5px; text-align:center; margin:0 4px}
 
   /* 部位下拉多选（力量表格内，仅展示已选部位） */
   .pdrop{position:relative}
@@ -362,36 +365,23 @@
   .pcheck{margin-left:auto; color:#2f6fe0; font-size:11px; visibility:hidden}
   .pdrop-item.on .pcheck{visibility:visible}
 
-  /* 时长双输入 hh h mm min */
-  .durc{display:flex; align-items:center; gap:2px; justify-content:flex-start}
-  .durc input.hc{width:34px; flex:0 0 34px; text-align:center; padding:2px 3px}
-  .durc .du-unit{font-size:11px; color:#6b7c99; padding:0 2px}
+  /* 时长双输入 hh 小时 mm 分钟。宽度掐得比较紧：有氧表 7 列要塞进半幅卡片，
+     多几个像素就会把「操作」列顶出可视区。选择器必须比上面的
+     `table.htable td .hc{padding:7px 9px}` 更具体，否则 18px 的左右内边距会把
+     两位数的分钟切掉一半。 */
+  .durc{display:flex; align-items:center; gap:0; justify-content:flex-start}
+  /* durc 是 <td class="num durc"> 本身，不是 td 的后代：写成 "td .durc" 会匹配不到任何元素，
+     通用的 table.htable td .hc{padding:7px 9px} 就会赢，分钟输入框被裁成 "3(" */
+  table.htable td.durc{padding:0 2px}
+  table.htable td.durc input.hc{width:30px; flex:0 0 30px; text-align:center; padding:2px 2px}
+  /* 标签左右不留内边距：有氧表内容最小宽正好卡在容器边界上，这 4px 就是横向滚动条的开关 */
+  .durc .du-unit{font-size:11px; color:#6b7c99; padding:0}
+  /* 上面加宽的 8px 从时间列的内边距里省回来：日期文本本身只要 ~72px */
+  table.htable.auto.cardio input[type="date"]{padding-left:4px; padding-right:4px}
+  /* 配速文本最长是 2'40"/100m，字号收一档，省下的宽度留给「操作」列 */
+  table.htable.auto.cardio td[data-cell="pace"]{font-size:12px; letter-spacing:-.2px}
 
-  /* 统计：左日历 + 右柱状图 两栏 */
-  .stats-2col{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
-  @media(max-width:760px){.stats-2col{grid-template-columns:1fr}}
-  .stpanel{border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:#fafbfc}
-  .stpanel-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px}
-  .stpanel-title{font-weight:700; font-size:13px; color:var(--ink)}
-  .stpanel-head .pill-group{margin-left:auto}
-
-  /* 左侧总览 3 块（有氧时长/力量训练/消耗） */
-  .ov-grid{display:flex; flex-direction:column; gap:8px; margin-bottom:10px}
-  .ov-block{border:1px solid var(--line); border-radius:10px; padding:8px 12px; background:#fff;
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .ov-icon{width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-size:15px; flex:none}
-  .ov-meta{display:flex; align-items:baseline; gap:4px; min-width:0}
-  .ov-label{font-size:11px; color:var(--muted); margin-right:4px}
-  .ov-main{font-size:18px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1}
-  .ov-unit{font-size:11px; color:var(--muted)}
-  .ov-chips{display:flex; gap:5px; flex-wrap:wrap; margin-left:auto}
-  .ov-chip{font-size:11px; font-weight:600; padding:2px 8px 2px 6px; border-radius:999px; color:var(--ink); background:#f2f4fa; white-space:nowrap; display:inline-flex; align-items:center; gap:5px}
-  .ov-chip i{width:8px; height:8px; border-radius:50%; flex:none; display:inline-block}
-  .ov-chip.empty{background:#e5e9f2; color:var(--muted)}
-  .ov-chips.ov-empty{color:var(--muted); font-size:11px; font-style:italic}
-
-  /* 右侧柱状图：上下两图叠放 */
+  /* 柱状图：上下两图叠放 */
   .chart-ctrls{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
   .chart-ctrls .pill-group .pill{padding:3px 9px; font-size:11.5px}
   .chart-stack{display:flex; flex-direction:column; gap:14px}
@@ -406,7 +396,6 @@
   .chart-nav .cnav-today{border:1px solid transparent; background:transparent; color:var(--muted); font-size:10.5px; padding:1px 5px; border-radius:5px; cursor:pointer; margin-left:2px}
   .chart-nav .cnav-today:hover{color:var(--ink); background:#f0f2f8}
   .chart-nav .cnav-today.hide{visibility:hidden}
-  .st-chart{--bar:var(--sport)}
   .stbars{display:flex; align-items:flex-end; gap:3px; height:140px; padding:4px 2px 0; overflow-x:auto}
   .stbar{flex:1 0 auto; min-width:14px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; cursor:pointer}
   .stbar .stbar-fill{width:70%; max-width:22px; background:var(--bar); border-radius:4px 4px 0 0; transition:height .18s,filter .12s; min-height:2px}
@@ -467,6 +456,7 @@
     <div class="tools">
       <span id="cloudStatus" title="云同步状态" style="display:inline-flex;align-items:center;font-size:12px;font-weight:700;color:#7a8194;margin-right:4px">● 本地模式</span>
       <button class="btn ghost" id="btnKey" title="输入或切换云同步密钥（与记账助手/工资测算等应用共用同一把密钥）">解锁/切换密钥</button>
+      <button class="btn ghost" id="btnSettings" title="体重、AI 估算密钥等">设置</button>
       <button class="btn ghost" id="btnImport">导入 JSON</button>
       <button class="btn" id="btnExport">导出备份</button>
     </div>
@@ -476,49 +466,43 @@
 <div class="wrap">
   <div class="grid">
 
-    <!-- 1. 运动统计 -->
-    <section class="card wide" data-m="sportstats">
+    <!-- 1. 运动日历 -->
+    <section class="card wide" data-m="sportcal">
+      <div class="accent"></div>
+      <div class="card-head">
+        <div class="dot">&#128197;</div>
+        <div class="card-title">运动日历</div>
+      </div>
+      <div class="card-body">
+        <div data-stats-cal></div>
+      </div>
+    </section>
+
+    <!-- 1b. 运动趋势 -->
+    <section class="card wide" data-m="sporttrend">
       <div class="accent"></div>
       <div class="card-head">
         <div class="dot">&#128200;</div>
-        <div class="card-title">运动统计</div>
+        <div class="card-title">运动趋势</div>
       </div>
       <div class="card-body">
-        <div class="stats-2col">
-          <!-- 左：运动日历（与卡路里融合） -->
-          <div class="stpanel">
-            <div class="stpanel-head">
-              <span class="stpanel-title">运动日历</span>
-            </div>
-            <div data-stats-cal></div>
-            <div class="st-weight" style="margin-top:8px">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
-            <!-- AI 估算密钥：只存本机 localStorage["dashscope-api-key"]，不入源码、不上云 -->
-            <div class="st-weight" style="margin-top:4px">AI 估算密钥 <input type="password" autocomplete="off" spellcheck="false" placeholder="未配置（留空=只用 MET 公式）" data-k="aiKey" style="width:150px;text-align:left"> <span data-ai-key-state style="color:var(--muted)"></span></div>
-            <!-- AI 补算卡路里：原来每次打开页面自动跑，现改为手动触发 -->
-            <div class="st-weight" style="margin-top:6px">
-              <button type="button" class="btn tiny ghost" data-tool="aiKcal">AI 补算卡路里</button>
-            </div>
+        <div class="chart-ctrls">
+          <div class="pill-group" data-pill="chartUnit">
+            <span class="pill on" data-val="km">公里</span>
+            <span class="pill" data-val="kcal">卡路里</span>
           </div>
-          <!-- 右：运动趋势柱状图 -->
-          <div class="stpanel st-chart">
-            <div class="stpanel-head"><span class="stpanel-title">运动趋势</span></div>
-            <div class="chart-ctrls">
-              <div class="pill-group" data-pill="chartUnit">
-                <span class="pill on" data-val="km">公里</span>
-                <span class="pill" data-val="kcal">卡路里</span>
-              </div>
-              <div class="pill-group" data-pill="chartProj">
-                <span class="pill on" data-val="all">全部</span>
-                <span class="pill" data-val="跑步">跑步</span>
-                <span class="pill" data-val="游泳">游泳</span>
-                <span class="pill" data-val="爬山">爬山</span>
-                <span class="pill" data-val="骑行">骑行</span>
-                <span class="pill" data-val="力量">力量</span>
-              </div>
-            </div>
-            <div data-stats-chart></div>
+          <div class="pill-group" data-pill="chartProj">
+            <span class="pill on" data-val="all">全部</span>
+            <span class="pill" data-val="游泳">游泳</span>
+            <span class="pill" data-val="跑步">跑步</span>
+            <span class="pill" data-val="骑行">骑行</span>
+            <span class="pill" data-val="爬山">爬山</span>
+            <span class="pill" data-val="健走">健走</span>
+            <span class="pill" data-val="跳绳">跳绳</span>
+            <span class="pill" data-val="其他">其他</span>
           </div>
         </div>
+        <div data-stats-chart></div>
       </div>
     </section>
 
@@ -584,6 +568,8 @@
           <span class="fchip" data-cff="骑行">骑行</span>
           <span class="fchip" data-cff="爬山">爬山</span>
           <span class="fchip" data-cff="健走">健走</span>
+          <span class="fchip" data-cff="跳绳">跳绳</span>
+          <span class="fchip" data-cff="其他">其他</span>
         </div>
         <div class="filter-bar year-tabs" data-year-tabs="cardio"></div>
         <div class="htable-wrap">
@@ -592,7 +578,7 @@
               <tr>
                 <th style="width:84px">时间</th>
                 <th style="width:84px">类型</th>
-                <th style="width:100px">时长</th>
+                <th style="width:116px">时长</th>
                 <th style="width:68px">距离(km)</th>
                 <th style="width:88px">平均配速</th>
                 <th style="width:50px">消耗</th>
@@ -713,6 +699,26 @@
 </div>
 
 <div class="footer">数据实时同步到云端（Supabase），本地同时留一份缓存做离线兜底：断网也能记录，联网后自动补同步。仍建议偶尔「导出备份」为 JSON 存档。</div>
+
+<!-- Settings modal：原来挤在运动日历面板里的体重 / AI 密钥 / AI 补算，统一收到这里 -->
+<div class="modal-back" id="settingsModal">
+  <div class="modal">
+    <h3>设置</h3>
+    <div class="modal-body">
+      <div class="st-weight">卡路里按体重 <input type="number" min="30" max="200" step="0.5" data-k="weightKg"> kg 估算（MET 法）</div>
+      <!-- AI 估算密钥：只存本机 localStorage["dashscope-api-key"]，不入源码、不上云 -->
+      <div class="st-weight" style="margin-top:10px">AI 估算密钥 <input type="password" autocomplete="off" spellcheck="false" placeholder="未配置（留空=只用 MET 公式）" data-k="aiKey" style="width:180px;text-align:left"> <span data-ai-key-state style="color:var(--muted)"></span></div>
+      <div class="hint" style="margin-top:6px">AI 密钥只保存在这台设备上，不会上传云端。留空时力量训练的消耗改用 MET 公式估算，数值前会带「≈」。</div>
+      <!-- AI 补算卡路里：原来每次打开页面自动跑，现改为手动触发 -->
+      <div class="st-weight" style="margin-top:10px">
+        <button type="button" class="btn tiny ghost" data-tool="aiKcal">AI 补算卡路里</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" data-close-modal>关闭</button>
+    </div>
+  </div>
+</div>
 
 <!-- Import modal -->
 <div class="modal-back" id="importModal">
@@ -866,8 +872,8 @@
   // 云端权威同步时，本地被判定为"已在别处删除"而移除的记录，先在这里留一份底，防误伤。
   var ORPHAN_BACKUP_KEY = "daily-records-orphans-v1";
   var MODULES = ["thought","sport","book","house"];
-  // 「其他」是有氧的正式兜底类目：sport 缺失或不在白名单时归到这里，可见可选、可再手工改。
-  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","其他"];
+  // 「其他」是有氧的正式兜底类目：sport 缺失时归到这里，可见可选、可再手工改。
+  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","跳绳","其他"];
   var CARDIO = ["游泳","跑步","骑行"];
   var WP = window.WorkoutParse;
 
@@ -1102,23 +1108,19 @@
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
-  // normalize various time inputs to "YYYY-MM-DDTHH:mm" for storage
+  // 四个模块的时间列都是「日期组件」，不记录几点钟，所以入库一律归一成 "YYYY-MM-DD"。
+  // 之所以不再补 T00:00：库里历史上混着 "2026-07-08" / "2026-07-08T00:00" / "2026-07-08T17:00"
+  // 三种写法，而字符串比较里 "2026-07-08T00:00" > "2026-07-08"，同一天的行会按「格式」排而不是
+  // 按录入顺序排 —— 行内「+」精确插到某行上方的定位就被冲掉了（新行写日期、老行是 T00:00）。
   function normTime(t){
     if(!t) return "";
     t = String(t).trim().replace(/\//g,"-");
-    // "YYYY-MM-DD HH:mm" -> "YYYY-MM-DDTHH:mm"
-    if(/^\d{4}-\d{1,2}-\d{1,2}[ T]\d{1,2}:\d{1,2}/.test(t)){
-      t = t.replace(" ","T");
-      var m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2})/);
-      if(m) return m[1]+"-"+pad(m[2])+"-"+pad(m[3])+"T"+pad(m[4])+":"+pad(m[5]);
-    }
-    // date only
-    if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)){
-      var d = t.split("-");
-      return d[0]+"-"+pad(d[1])+"-"+pad(d[2])+"T00:00";
-    }
+    var m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return m[1]+"-"+pad(m[2])+"-"+pad(m[3]);
     return t;
   }
+  // 排序/分组一律只比「日」：老数据里那 10 条带钟点的记录不会因为格式差异插队。
+  function dayOf(t){ return String(t==null?"":t).slice(0,10); }
   function pad(n){ n=String(n); return n.length<2 ? "0"+n : n; }
   function fmtTime(t){
     if(!t) return "";
@@ -1163,6 +1165,7 @@
     if(sp==="爬山") return 6.0;                          // 中强度徒步/登山
     if(sp==="健身") return 5.0;                          // 力量训练中高强度
     if(sp==="健走") return 4.3;                          // 快走/健步走
+    if(sp==="跳绳") return 12.3;                         // 跳绳（ACSM: general rope jumping）
     return 4.0;                                          // 其他/一般活动
   }
   // total number of working sets across a strength session's exercises
@@ -1208,6 +1211,27 @@
       if(man!=null && man>0) return Math.round(man);
     }
     return autoCalories(r);
+  }
+  // 这条力量记录的消耗是不是 AI 出的（有存值=AI 出的，没有=下面回落 MET 公式）
+  function hasAiKcal(r){ return !!(r && r.sport==="健身" && num(r.kcal)>0); }
+  // 编辑力量字段后要不要清掉旧的消耗值：只有配了 AI 密钥、清掉之后确实能重新估算时才清。
+  // 否则（没配密钥）清掉就是净丢数据 —— 页面回落 MET 公式，云端那条的 kcal 也被抹了。
+  function invalidateAiKcal(r){ if(r && getAiKey()) delete r.kcal; }
+  // 消耗单元格的展示文本：AI 值直接给数字；MET 公式估算的加「≈」区分，避免被当成 AI 结果
+  function kcalText(r){
+    var k = calcCalories(r);
+    if(!(k>0)) return "";
+    if(r.sport==="健身" && !hasAiKcal(r)) return "≈"+k;
+    return String(k);
+  }
+  function kcalTitle(r){
+    if(r && r.sport==="健身") return hasAiKcal(r) ? "AI 估算" : "MET 公式估算（未配置 AI 密钥或还没估算过）";
+    return "MET 公式自动计算";
+  }
+  function setKcalCell(cell, r){
+    if(!cell) return;
+    cell.textContent = kcalText(r);
+    cell.setAttribute("title", kcalTitle(r));
   }
 
   // ---------- AI 卡路里估算 (阿里云百炼 / DashScope, OpenAI 兼容) ----------
@@ -1261,12 +1285,8 @@
   // 更新页面上此条记录的 kcal 只读单元格
   function refreshKcalCell(r){
     if(!r) return;
-    var k = calcCalories(r);
-    var txt = (k>0) ? String(k) : "";
-    var sCell = document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
-    if(sCell) sCell.textContent = txt;
-    var cCell = document.querySelector('[data-cardio-body] tr[data-cid="'+r.id+'"] [data-cell="kcal"]');
-    if(cCell) cCell.textContent = txt;
+    setKcalCell(document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]'), r);
+    setKcalCell(document.querySelector('[data-cardio-body] tr[data-cid="'+r.id+'"] [data-cell="kcal"]'), r);
   }
   // 统一 AI 卡路里估算 —— 力量 + 有氧
   function aiKcal(r){
@@ -1348,29 +1368,8 @@
     return new Date(+m[1], +m[2]-1, +m[3]);
   }
   function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
-  function mondayOf(d){
-    var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
-    var wd=(x.getDay()+6)%7;            // 周一=0
-    x.setDate(x.getDate()-wd);
-    return x;
-  }
-  // period key + label for range = "day"|"week"|"month"
-  function periodKey(d, range){
-    if(range==="week"){ var mo=mondayOf(d); return "W|"+ymd(mo); }
-    if(range==="month") return "M|"+d.getFullYear()+"-"+pad(d.getMonth()+1);
-    return "D|"+ymd(d);
-  }
-  function periodLabel(d, range){
-    if(range==="week"){ var mo=mondayOf(d), su=new Date(mo); su.setDate(mo.getDate()+6);
-      return (mo.getMonth()+1)+"/"+mo.getDate()+"–"+(su.getMonth()+1)+"/"+su.getDate(); }
-    if(range==="month") return d.getFullYear()+"年"+(d.getMonth()+1)+"月";
-    return (d.getMonth()+1)+"月"+d.getDate()+"日";
-  }
-  function inCurrentPeriod(d, range){
-    if(!d) return false;
-    var now=new Date();
-    return periodKey(d,range)===periodKey(now,range);
-  }
+  // 已移除：mondayOf / periodKey / periodLabel / inCurrentPeriod。
+  // 它们只服务于日历卡片上方那块「今日概览」（日/周/月汇总），概览已按规范整块删除，这里零引用。
 
   // ---------- validation + signature (for dedup) ----------
   function normDur(v){
@@ -1466,9 +1465,9 @@
     if(isGym){ r.distance = null; r.distUnit = ""; }
     else {
       r.exercises = [];
-      // 最小守卫：只兜底 sport 缺失/拼错的情况，避免下拉框无匹配项时静默显示成第一项(游泳)、
-      // 且类型筛选按 sport 精确匹配会漏掉它们。「其他」已是合法类目，显式填写的值不会被改写。
-      if(CARDIO_SPORTS.indexOf(r.sport)<0){ r.sport = "其他"; }
+      // 只在 sport 完全缺失时兜底成「其他」。不再按白名单改写：用户/导入写进来的类型一律原样保留，
+      // 下拉框会为它临时补一个选项，类型筛选也用同样的值精确匹配，不会漏。
+      if(!r.sport) r.sport = "其他";
     }
     return r;
   }
@@ -1481,26 +1480,36 @@
   // 补你主动删掉的记录。现在的规则只有一条：你录几条就是几条，原样存、原样显示，
   // 不合并、不去重、不改写。要清理请自己删。
 
-  function validate(rec){
+  // 看房单价永远由 总价 ÷ 面积 推导（总价单位是万元）。面积或总价缺一个时才回落到传进来的旧值，
+  // 免得历史上只填了单价、没填面积/总价的行被清空。
+  function houseUnitPrice(rec){
+    var a=num(rec && rec.area), t=num(rec && rec.totalPrice);
+    if(a!=null && a>0 && t!=null && t>0) return Math.round(t*10000/a);
+    return num(rec && rec.unitPrice);
+  }
+  // strict=true 只给「导入 JSON」用：那里要把残缺行挡在门外。
+  // 表格里的日常编辑一律走 strict=false —— 内容/书名/小区名可以先空着，日期照样能存，
+  // 不然新加一行想先填日期再填内容，日期会被整行丢弃。
+  function validate(rec, strict){
     if(!rec || MODULES.indexOf(rec.module)<0) return null;
     var t = normTime(rec.time);
     if(!t && rec.module!=="house") return null;
     var r = { module: rec.module, time: t||"" };
     if(rec.module==="thought"){
-      if(!rec.content) return null;
-      r.content = String(rec.content).trim();
+      if(strict && !rec.content) return null;
+      r.content = rec.content==null ? "" : String(rec.content).trim();
     }else if(rec.module==="sport"){
       if(SPORTS.indexOf(rec.sport)<0) return null;
       fillSportFields(r, rec);
     }else if(rec.module==="book"){
-      if(!rec.book) return null;
+      if(strict && !rec.book) return null;
       var fp=num(rec.fromPage), tp=num(rec.toPage);
-      r.book=String(rec.book).trim(); r.fromPage=fp; r.toPage=tp;
+      r.book=rec.book==null?"":String(rec.book).trim(); r.fromPage=fp; r.toPage=tp;
       r.pagesRead = (fp!=null && tp!=null) ? Math.max(0, tp-fp) : null;
       r.note = rec.note ? String(rec.note).trim() : "";
     }else if(rec.module==="house"){
-      if(!rec.community) return null;
-      r.community=String(rec.community).trim();
+      if(strict && !rec.community) return null;
+      r.community=rec.community==null?"":String(rec.community).trim();
       r.district=rec.district?String(rec.district).trim():"";
       r.metro=rec.metro?String(rec.metro).trim():"";
       r.propType=rec.propType?String(rec.propType).trim():"";
@@ -1508,8 +1517,7 @@
       r.school=rec.school?String(rec.school).trim():"";
       r.area=num(rec.area);
       r.totalPrice=num(rec.totalPrice);
-      r.unitPrice=num(rec.unitPrice);
-      if(r.unitPrice==null && r.area && r.totalPrice) r.unitPrice=Math.round(r.totalPrice*10000/r.area);
+      r.unitPrice=houseUnitPrice(rec);
       r.downPay=num(rec.downPay);
       r.advantage=rec.advantage?String(rec.advantage).trim():"";
       r.disadvantage=rec.disadvantage?String(rec.disadvantage).trim():"";
@@ -1562,7 +1570,7 @@
     var sigs = existingSignatures();
     var added=0, dup=0, invalid=0, addedRecs=[];
     (list||[]).forEach(function(raw){
-      var r = validate(raw);
+      var r = validate(raw, true);   // 导入走严格校验：残缺行挡在门外
       if(!r){ invalid++; return; }
       var sig = signature(r);
       if(sigs[sig]){ dup++; return; }
@@ -1589,7 +1597,7 @@
 
   function recordsOf(m){
     return state.records.filter(function(r){return r.module===m;})
-      .sort(function(a,b){ return (b.time||"").localeCompare(a.time||"") || (b.createdAt||0)-(a.createdAt||0); });
+      .sort(function(a,b){ return dayOf(b.time).localeCompare(dayOf(a.time)) || (b.createdAt||0)-(a.createdAt||0); });
   }
   function matchSearch(r, term){
     if(!term) return true;
@@ -1611,39 +1619,38 @@
     return "配速 "+mm+"'"+(ss<10?"0":"")+ss+"\"/km";
   }
   // average pace/speed for cardio card (no "配速 " prefix)
+  // 口径：游泳按 /100m，骑行和爬山按 km/h，其余（跑步/健走/跳绳/其他/自定义类型）一律按 min/km。
+  // 只要「时长」和「距离」都填了就一定出数，不再有类型落不到分支上而永远空白的情况。
   function cardioPaceStr(r){
     if(!r) return "";
     var d = num(r.duration); if(!(d>0)) return "";
     var km = distanceKm(r); if(!(km>0)) return "";
-    if(r.sport==="跑步"){
-      var sec=d*60/km, mm=Math.floor(sec/60), ss=Math.round(sec-mm*60);
-      if(ss===60){ mm+=1; ss=0; }
-      return mm+"'"+(ss<10?"0":"")+ss+"\"/km";
-    }
-    if(r.sport==="骑行" || r.sport==="爬山"){
-      return (Math.round(km/(d/60)*10)/10)+" km/h";
-    }
     if(r.sport==="游泳"){
       var s100=d*60/(km*10), m1=Math.floor(s100/60), s1=Math.round(s100-m1*60);
       if(s1===60){ m1+=1; s1=0; }
       return m1+"'"+(s1<10?"0":"")+s1+"\"/100m";
     }
-    return "";
+    if(r.sport==="骑行" || r.sport==="骑车" || r.sport==="爬山"){
+      return (Math.round(km/(d/60)*10)/10)+" km/h";
+    }
+    var sec=d*60/km, mm=Math.floor(sec/60), ss=Math.round(sec-mm*60);
+    if(ss===60){ mm+=1; ss=0; }
+    return mm+"'"+(ss<10?"0":"")+ss+"\"/km";
   }
-  // 时长展示统一为 "X' Y''"（默认 0' 0''）
+  // 时长展示统一为 "X 小时 Y 分"（不足 1 小时只显示分钟）
   function fmtDurHM(minutes){
     var t = num(minutes); if(t==null || t<0) t = 0;
     var h = Math.floor(t/60), m = Math.round(t - h*60);
-    return h+"' "+m+"''";
+    return h>0 ? (h+" 小时 "+m+" 分") : (m+" 分");
   }
   // ---------- 力量训练 (strength) ----------
-  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/爬山/健走/其他
+  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/爬山/健走/跳绳/其他
   var PARTS_ALL = ["胸","背","肩","腿"];
   var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
   var SPORT_GREEN = "#10b981";
-  // 有氧运动 6 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕 / 健走灰蓝 / 其他中灰
-  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走","其他"];
-  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8", "其他":"#a8a29e" };
+  // 有氧运动 7 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕 / 健走灰蓝 / 跳绳黄 / 其他中灰
+  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走","跳绳","其他"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8", "跳绳":"#eab308", "其他":"#a8a29e" };
   // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
   var LAP_KM = 0.05;
   // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
@@ -1695,7 +1702,21 @@
     var c=document.querySelector('[data-year-tabs="cardio"]');
     if(c) c.innerHTML = yearTabsHTML("cardio");
   }
-  function byTimeDesc(a,b){ return (b.time||"").localeCompare(a.time||"") || (b.createdAt||0)-(a.createdAt||0); }
+  function byTimeDesc(a,b){ return dayOf(b.time).localeCompare(dayOf(a.time)) || (b.createdAt||0)-(a.createdAt||0); }
+  // 行内「+」= 在参考行的**正上方**插一行。各表排序都是「时间倒序 → createdAt 倒序」，
+  // 所以把新行 createdAt 取在「视觉上一行」和「参考行」之间即可精确落位（小数无妨，jsonb 存 number）。
+  // 参考行已经是本日期组第一行时，取一个比它大的值即可。
+  function createdAtAbove(list, ref){
+    if(!ref) return Date.now();
+    var i = list.indexOf(ref);
+    var refC = (ref.createdAt||0);
+    if(i<0) return Math.max(Date.now(), refC+1000);
+    var prev = (i>0) ? list[i-1] : null;
+    var sameDay = prev && String(prev.time||"").slice(0,10) === String(ref.time||"").slice(0,10);
+    if(!sameDay) return Math.max(Date.now(), refC+1000);
+    var prevC = (prev.createdAt||0);
+    return prevC > refC ? (prevC+refC)/2 : refC+0.5;
+  }
   function strengthRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport==="健身"; }).sort(byTimeDesc); }
   function cardioRecords(){ return state.records.filter(function(r){ return r.module==="sport" && r.sport!=="健身"; }).sort(byTimeDesc); }
   function findSport(id){ return state.records.find(function(x){ return x.id===id && x.module==="sport"; }); }
@@ -1742,8 +1763,7 @@
       cells += '<td class="num"><input class="hc" type="text" inputmode="numeric" data-numint="1" data-f="r" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.r==null?"":ln.r)+'"></td>';
       cells += '<td class="num"><input class="hc" type="text" inputmode="numeric" data-numint="1" data-f="n" data-ei="'+ln.ei+'" data-si="'+ln.si+'" value="'+esc(ln.n==null?"":ln.n)+'"></td>';
       if(first){
-        var kc=calcCalories(r);
-        cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal">'+(kc>0?kc:"")+'</td>';
+        cells += '<td class="span-cell num readonly" rowspan="'+span+'" data-sk="kcal" title="'+esc(kcalTitle(r))+'">'+esc(kcalText(r))+'</td>';
       }
       cells += '<td class="setact"><button type="button" class="mini-btn plus" data-set-add="'+esc(r.id)+'" data-ei="'+ln.ei+'" title="上方加一行">+</button>'
              + '<button type="button" class="mini-btn minus" data-set-del="'+esc(r.id)+'" data-ei="'+ln.ei+'" data-si="'+ln.si+'" title="删除本行">&minus;</button></td>';
@@ -1786,15 +1806,15 @@
       syncStrengthRaw(r);
     }
     r.updatedAt=Date.now();
-    // 消耗量完全由 AI 生成,任何字段变更都要重算：先清掉旧值,由 scheduleAiKcal 异步刷新
-    delete r.kcal;
+    // 消耗量由 AI 生成，字段变了要重算 —— 但只有配了密钥、确实能重算时才清旧值，
+    // 否则没配密钥的浏览器上碰一下就把已有的 AI 消耗抹掉并同步到云端了。
+    invalidateAiKcal(r);
     // NOTE: do NOT renderStrength() on plain field edits — a full re-render would
     // destroy the (+)/(−) button under the cursor and swallow the first click.
     // The typed value already shows in the DOM; we only persist + refresh stats.
     save(); cloudUpsert(r); renderStats(); updTotal();
     // AI 完成前用本地估算兜底显示
-    var kc=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]');
-    if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
+    setKcalCell(document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-sk="kcal"]'), r);
     // 触发 AI 重算 kcal（去抖后异步刷新）
     scheduleAiKcal(r);
   }
@@ -1820,7 +1840,7 @@
     if(i>=0) r.parts.splice(i,1); else r.parts.push(p);
     r.parts = PARTS_ALL.filter(function(x){ return r.parts.indexOf(x)>=0; });
     r.updatedAt=Date.now();
-    delete r.kcal;
+    invalidateAiKcal(r);
     save(); cloudUpsert(r); renderStats();
     scheduleAiKcal(r);
     // in-place refresh of just this session's parts cell — keep dropdown open
@@ -1840,22 +1860,28 @@
     var pos=(ei>=0 && ei<=r.exercises.length) ? ei : r.exercises.length;
     r.exercises.splice(pos,0,{ name:"", sets:[{ w:null, unit:"kg", r:null, n:1 }] });
     syncStrengthRaw(r); r.updatedAt=Date.now();
-    delete r.kcal;
+    invalidateAiKcal(r);
     save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
     scheduleAiKcal(r);
   }
   function strengthDelSet(id, ei, si){
     var r=findSport(id); if(!r) return;
     var ex=r.exercises && r.exercises[ei]; if(!ex) return;
+    var isLastLine = (r.exercises.length===1) && (!Array.isArray(ex.sets) || ex.sets.length<=1);
+    if(isLastLine){
+      if(!confirm("这是本条力量训练的最后一行，删掉后整条记录会一起删除，确认？")) return;
+      state.records=state.records.filter(function(x){ return x.id!==id; });
+      save(); cloudDelete(id, true); renderStrength(); renderStats(); updTotal(); return;
+    }
+    if(!confirm("确认删除这一行？")) return;
     if(Array.isArray(ex.sets) && ex.sets.length>1){ ex.sets.splice(si,1); }
     else { r.exercises.splice(ei,1); }
     if(!r.exercises.length){
-      if(!confirm("这条力量训练已无动作，删除整条记录？")){ strengthAddSet(id,-1); return; }
       state.records=state.records.filter(function(x){ return x.id!==id; });
       save(); cloudDelete(id, true); renderStrength(); renderStats(); updTotal(); return;
     }
     syncStrengthRaw(r); r.updatedAt=Date.now();
-    delete r.kcal;
+    invalidateAiKcal(r);
     save(); cloudUpsert(r); renderStrength(); renderStats(); updTotal();
     scheduleAiKcal(r);
   }
@@ -1870,12 +1896,8 @@
     var b=document.querySelector('[data-strength-body] tr[data-sid="'+r.id+'"] [data-f="name"]');
     if(b) b.focus();
   }
-  function sessionDelete(id){
-    var r=findSport(id); if(!r) return;
-    if(!confirm("确认删除这条力量训练记录？")) return;
-    state.records=state.records.filter(function(x){ return x.id!==id; });
-    save(); cloudDelete(id, true); renderStrength(); renderStats(); updTotal();
-  }
+  // 已移除：sessionDelete()。它是一个"带确认地删掉整条力量记录"的函数，但全文没有任何地方调用，
+  // 属于死代码。删整条的入口现在只有一个：行内「−」删到最后一行时弹确认，确认后整条一起删。
 
   // ---------- 有氧训练 (cardio) ----------
   function parseDistText(sport, txt){
@@ -1896,9 +1918,13 @@
     return { distance:null, unit:"" };
   }
   function cardioRowHTML(r){
-    var opts=CARDIO_SPORTS.map(function(o){ return '<option value="'+esc(o)+'"'+(r.sport===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("");
+    var kinds = CARDIO_SPORTS.slice();
+    // 读入时不再改写类型，所以库里可能存在白名单以外的值（历史数据/导入）。
+    // 给它临时补一个选项，保证下拉框显示的是真实值，而不是静默落到第一项。
+    if(r.sport && kinds.indexOf(r.sport)<0) kinds.push(r.sport);
+    var opts=kinds.map(function(o){ return '<option value="'+esc(o)+'"'+(r.sport===o?" selected":"")+'>'+esc(o)+'</option>'; }).join("");
     var distTxt = (r.distance!=null && r.distance!=="") ? String(r.distance) : "";
-    var pace=cardioPaceStr(r), kcal=calcCalories(r);
+    var pace=cardioPaceStr(r);
     var totalMin = num(r.duration); if(totalMin==null || totalMin<0) totalMin = 0;
     var durH = Math.floor(totalMin/60), durM = Math.round(totalMin - durH*60);
     return '<tr data-cid="'+esc(r.id)+'">'
@@ -1906,13 +1932,13 @@
       + '<td><select class="hc" data-cf="sport">'+opts+'</select></td>'
       + '<td class="num durc">'
         + '<input class="hc" type="text" inputmode="numeric" data-numint="1" data-cf="durH" value="'+durH+'">'
-        + '<span class="du-unit">&#8242;</span>'
+        + '<span class="du-unit">小时</span>'
         + '<input class="hc" type="text" inputmode="numeric" data-numint="1" data-cf="durM" value="'+durM+'">'
-        + '<span class="du-unit">&#8243;</span>'
+        + '<span class="du-unit">分钟</span>'
       + '</td>'
       + '<td><input class="hc" type="text" inputmode="decimal" data-cf="dist" value="'+esc(distTxt)+'"></td>'
       + '<td class="readonly" data-cell="pace">'+esc(pace)+'</td>'
-      + '<td class="num readonly" data-cell="kcal">'+(kcal>0?kcal:"")+'</td>'
+      + '<td class="num readonly" data-cell="kcal" title="'+esc(kcalTitle(r))+'">'+esc(kcalText(r))+'</td>'
       + '<td class="rowact"><button type="button" class="mini-btn plus" data-cardio-add="'+esc(r.id)+'" title="上方加一行">+</button>'
         + '<button type="button" class="mini-btn minus" data-cardio-del="'+esc(r.id)+'" title="删除">&minus;</button></td>'
       + '</tr>';
@@ -1923,8 +1949,9 @@
     renderYearTabs();
     var all=cardioRecords();
     var shown=all.filter(function(r){
+      // 用 cardioKind 归一后比较：骑车→骑行，非白名单类型统一落进「其他」芯片，避免筛不出来
       return matchSearch(r, searchTerms.cardio)
-        && (!cardioFilter || r.sport===cardioFilter)
+        && (!cardioFilter || (cardioKind(r)||"")===cardioFilter)
         && (cardioYear==null || recYear(r)===cardioYear);
     });
     var cnt=document.getElementById("cnt-cardio"); if(cnt) cnt.textContent=all.length;
@@ -1941,7 +1968,7 @@
       if(!t){ toast("时间不能为空", true); renderCardio(); return; }
       r.time=t;
     }else if(f==="sport"){
-      if(CARDIO_SPORTS.indexOf(el.value)<0) return;
+      if(CARDIO_SPORTS.indexOf(el.value)<0 && el.value!==r.sport) return;
       r.sport=el.value;
       r.parts=[];
       if(cardioFilter) needRerender=true;   // may drop out of active type filter
@@ -1966,8 +1993,7 @@
     // update derived (readonly) cells in place — avoids destroying the (+)/(−)
     // buttons mid-click (which otherwise required a second click).
     var pc=tr.querySelector('[data-cell="pace"]'); if(pc) pc.textContent=cardioPaceStr(r);
-    var kc=tr.querySelector('[data-cell="kcal"]');
-    if(kc){ var k=calcCalories(r); kc.textContent = k>0 ? String(k) : ""; }
+    setKcalCell(tr.querySelector('[data-cell="kcal"]'), r);
   }
   function cardioAdd(refId){
     var refRec = refId ? findSport(refId) : null;
@@ -1975,7 +2001,8 @@
     var sp = refRec ? refRec.sport : "跑步";
     var r=validate({ module:"sport", sport:sp, time:t, project:"" });
     if(!r) return;
-    r.id=uid(); r.createdAt=Date.now();
+    r.id=uid();
+    r.createdAt = refRec ? createdAtAbove(cardioRecords(), refRec) : Date.now();
     state.records.push(r);
     save(); cloudUpsert(r); renderCardio(); renderStats(); updTotal();
     var b=document.querySelector('[data-cardio-body] tr[data-cid="'+r.id+'"] [data-cf="dist"]');
@@ -2052,7 +2079,7 @@
       {k:"school",       type:"text", cls:"col-school",   clip:true},
       {k:"area",         type:"num"},
       {k:"totalPrice",   type:"num"},
-      {k:"unitPrice",    type:"num"},
+      {k:"unitPrice",    type:"ro"},
       {k:"downPay",      type:"num"},
       {k:"advantage",    type:"text", cls:"col-adv",      clip:true},
       {k:"disadvantage", type:"text", cls:"col-dis",      clip:true},
@@ -2069,15 +2096,17 @@
     if(m==="house"){
       var arr=state.records.filter(function(r){ return r.module==="house"; });
       arr.sort(function(a,b){
-        var aa=!!a.added, ba=!!b.added;
-        if(aa!==ba) return aa ? -1 : 1;                 // user-added rows on top
-        if(aa){
-          var c=(b.time||"").localeCompare(a.time||"");  // newest time first
+        // 规范口径：按看房时间倒序。28 条老记录没填看房时间，让它们垫底并保持导入原序，
+        // 不参与时间排序，避免"补一条新记录就把老记录冲乱"。
+        var ta=dayOf(a.time), tb=dayOf(b.time);
+        if(!!ta !== !!tb) return ta ? -1 : 1;            // 有时间的在上
+        if(ta){
+          var c=tb.localeCompare(ta);                    // 看房时间倒序
           if(c!==0) return c;
           return (b.createdAt||0)-(a.createdAt||0);
         }
         var sa=(a.seq==null?1e9:a.seq), sb=(b.seq==null?1e9:b.seq);
-        if(sa!==sb) return sa-sb;                        // seed rows: source order
+        if(sa!==sb) return sa-sb;                        // 无时间：导入原序
         return (a.createdAt||0)-(b.createdAt||0);
       });
       return arr;
@@ -2100,6 +2129,8 @@
       return r[k]==null ? "" : r[k];
     }
     if(m==="book" && k==="pagesRead") return (r.pagesRead!=null) ? r.pagesRead : "";
+    // 单价是纯派生值：一律现算，不看库里存的那个数，改总价/面积立刻跟着变
+    if(m==="house" && k==="unitPrice"){ var up=houseUnitPrice(r); return up==null ? "" : up; }
     return r[k]==null ? "" : r[k];
   }
 
@@ -2121,7 +2152,7 @@
     }else if(m==="house"){
       o.community=c.community; o.district=c.district; o.metro=c.metro;
       o.year=c.year; o.school=c.school; o.area=c.area; o.totalPrice=c.totalPrice;
-      o.unitPrice=c.unitPrice; o.downPay=c.downPay;
+      o.unitPrice=keep("unitPrice"); o.downPay=c.downPay;
       o.advantage=c.advantage; o.disadvantage=c.disadvantage; o.remark=c.remark;
       o.propType=keep("propType"); o.idea=keep("idea");
       if(prev && prev.houseType!=null && !("houseType" in c)) o.houseType=prev.houseType;
@@ -2140,8 +2171,8 @@
     if(k==="time") tdcls=(tdcls?tdcls+" ":"")+"tcell";
     var ph = col.ph ? (' placeholder="'+esc(col.ph)+'"') : '';
     var inner;
-    if(k==="time" && m!=="house"){
-      // 思考/读书：日期组件，只到日（不记录几点钟）
+    if(k==="time"){
+      // 思考/读书/看房：日期组件，只到日（不记录几点钟）
       inner='<input class="hc" type="date" data-k="time" value="'+esc(String(val).slice(0,10))+'"'+ph+'>';
     }else if(col.type==="select"){
       inner='<select class="hc" data-k="'+k+'"><option value=""></option>'
@@ -2173,12 +2204,8 @@
     }
     return '<tr data-id="'+esc(r.id)+'">'+tds+'</tr>';
   }
-  function sheetNewRowHTML(m, cols){
-    var tds=cols.map(function(c){ return sheetCellHTML(m,c,null,true); }).join("");
-    if(m==="house") tds+=houseImageCellHTML(null);
-    if(m==="house" || m==="thought" || m==="book") tds+='<td class="rowact"></td>';
-    return '<tr class="sheet-new" data-new="1">'+tds+'</tr>';
-  }
+  // 已移除：sheetNewRowHTML()。表尾那一行空白「新增行」早已不再渲染，
+  // 新增统一走行内「+」（插到该行上方）和表格底部「添加 +」两个入口。
   function houseImageCellHTML(r){
     if(!r) return '<td class="himg-cell"><span class="himg-hint">保存后可加图</span></td>';
     var imgs=r.images||[];
@@ -2298,10 +2325,22 @@
   }
   function houseAddRow(refId){
     var ref = refId ? findHouse(refId) : null;
-    var t = ref ? ref.time : (function(){
-      var d=new Date();
-      return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
-    })();
+    var list = sheetRecords("house");
+    var t = ref ? String(ref.time||"").slice(0,10) : todayStr();   // 与日期组件一致：只到日
+    var createdAt = Date.now(), seq = nextHouseSeq();
+    if(ref){
+      if(t){
+        // 参考行在「有时间」区：按 createdAt 插到它正上方
+        createdAt = createdAtAbove(list, ref);
+      }else{
+        // 参考行在「无时间」区（按 seq 升序）：seq 取上一行与参考行的中值即落在其正上方
+        var i = list.indexOf(ref);
+        var refS = (ref.seq==null ? nextHouseSeq() : ref.seq);
+        var prev = (i>0) ? list[i-1] : null;
+        var prevS = (prev && !prev.time && prev.seq!=null) ? prev.seq : null;
+        seq = (prevS!=null && prevS<refS) ? (prevS+refS)/2 : refS-0.5;
+      }
+    }
     var r = {
       id: uid(), module: "house", v: 2,
       time: t,
@@ -2310,8 +2349,8 @@
       totalPrice:null, unitPrice:null, downPay:null,
       advantage:"", disadvantage:"", idea:"", remark:"",
       images: [], added: true,
-      seq: nextHouseSeq(),
-      createdAt: Date.now(), updatedAt: Date.now()
+      seq: seq,
+      createdAt: createdAt, updatedAt: Date.now()
     };
     state.records.push(r);
     save(); cloudUpsert(r); sheetRender("house");
@@ -2324,7 +2363,9 @@
   function sheetAddRow(m, refId){
     var ref = refId ? state.records.filter(function(x){ return x.id===refId; })[0] : null;
     var t = (ref && ref.time) ? String(ref.time).slice(0,10) : todayStr();
-    var r = { id: uid(), module: m, time: t, createdAt: Date.now(), updatedAt: Date.now() };
+    var r = { id: uid(), module: m, time: t,
+              createdAt: ref ? createdAtAbove(recordsOf(m), ref) : Date.now(),
+              updatedAt: Date.now() };
     if(m==="thought"){ r.content=""; }
     else if(m==="book"){ r.book=""; r.fromPage=null; r.toPage=null; r.pagesRead=null; r.note=""; }
     state.records.push(r);
@@ -2360,6 +2401,9 @@
   function houseRemoveImage(id, idx){
     var r=findHouse(id); if(!r || !Array.isArray(r.images)) return;
     if(idx<0 || idx>=r.images.length) return;
+    var it=r.images[idx];
+    var nm=(it && typeof it==="object" && it.note) ? ("「"+it.note+"」") : "第 "+(idx+1)+" 张";
+    if(!confirm("确认删除"+nm+"图片？")) return;
     r.images.splice(idx,1);
     r.updatedAt=Date.now();
     save(); cloudUpsert(r); sheetRender("house");
@@ -2393,11 +2437,10 @@
   }
 
   // ---------- sport statistics ----------
-  var statsRange = "day";      // day | week | month —— 控制左侧指标汇总的时间范围
   var calYM = null;            // {y,m} 日历查看的月份
   var calSelDay = null;        // 点开查看详情的日
   var chartUnit = "km";        // km | kcal
-  var chartProj = "all";       // all | 跑步 | 游泳 | 爬山 | 骑行 | 力量
+  var chartProj = "all";       // all | 游泳 | 跑步 | 骑行 | 爬山 | 健走 | 跳绳 | 其他（只筛有氧）
   var chartYear = null;        // 全年图查看的年份 (null=当前年)
   var chartMonth = null;       // 本月图查看的 {y,m} (null=当前月)
   var chartYearSel = null;     // 全年图选中的月 (1-12)
@@ -2417,92 +2460,21 @@
     var k = getAiKey();
     box.textContent = k ? ("已配置 ····"+k.slice(-4)) : "未配置：AI 估算关闭，卡路里用 MET 公式";
   }
-  // 左侧：3 块总览 (有氧时长 / 力量次数+部位 / 消耗) + 始终展示的运动日历
+  // 运动日历卡片：只渲染日历本身。
+  // 原来这里上方还挂着「今日概览」（有氧时长 / 力量次数+部位 / 消耗）三块统计，规范里没有这一块，
+  // 且它与下方日历、右侧趋势图三处口径重复，已整块移除。
   function renderStatsLeft(){
     var box = document.querySelector("[data-stats-cal]");
     if(!box) return;
-    var now = new Date();
-    var rows = state.records.filter(function(r){
-      if(r.module!=="sport") return false;
-      var d = recDate(r);
-      return d && periodKey(d,statsRange)===periodKey(now,statsRange);
-    });
-    var cardioDurByKind = {};   // 分类型累计有氧分钟
-    var cardioTotalDur = 0;
-    var strengthCount = 0;      // 力量训练次数：有几条记录就是几次，不按日期去重
-    var strengthCountByPart = {}; // 部位 -> 记录条数
-    PARTS_ALL.forEach(function(p){ strengthCountByPart[p] = 0; });
-    var totalCal = 0;
-    var calBySport = {};
-    rows.forEach(function(r){
-      var c = calcCalories(r); totalCal += c;
-      var sp = r.sport||"健走";
-      if(!calBySport[sp]) calBySport[sp] = 0;
-      calBySport[sp] += c;
-      if(r.sport==="健身"){
-        strengthCount++;
-        (r.parts||[]).forEach(function(p){
-          if(p in strengthCountByPart) strengthCountByPart[p]++;
-        });
-      }else{
-        var mins = num(r.duration)||0;
-        if(mins>0){
-          cardioTotalDur += mins;
-          var k = cardioKind(r)||"其他";
-          cardioDurByKind[k] = (cardioDurByKind[k]||0) + mins;
-        }
-      }
-    });
-    var strengthDayCount = strengthCount;
-    var periodName = periodLabel(now, statsRange);
-    var overview;
-    if(!rows.length){
-      overview = '<div class="st-empty">'+esc(periodName)+' 还没有运动记录</div>';
-    }else{
-      // 有氧块
-      var cardioChips = CARDIO_KINDS.map(function(k){
-        var m = cardioDurByKind[k]||0; if(!(m>0)) return "";
-        return '<span class="ov-chip"><i style="background:'+CARDIO_COLORS[k]+'"></i>'+esc(k)+' '+m+'</span>';
-      }).filter(function(x){return x;}).join("");
-      var cardioBlock = '<div class="ov-block">'
-        + '<div class="ov-meta"><div class="ov-label">有氧时长</div>'
-        + '<div class="ov-main">'+fmtDurHM(cardioTotalDur)+'</div></div>'
-        + (cardioChips ? '<div class="ov-chips">'+cardioChips+'</div>' : '<div class="ov-chips ov-empty">无有氧</div>')
-        + '</div>';
-      // 力量块
-      var partChips = PARTS_ALL.map(function(p){
-        var c = strengthCountByPart[p]||0;
-        return '<span class="ov-chip"><i style="background:'+PART_COLORS[p]+'"></i>'+esc(p)+' '+c+'</span>';
-      }).join("");
-      var strengthBlock = '<div class="ov-block">'
-        + '<div class="ov-meta"><div class="ov-label">力量训练</div>'
-        + '<div class="ov-main">'+strengthDayCount+'<span class="ov-unit">次</span></div></div>'
-        + '<div class="ov-chips">'+partChips+'</div>'
-        + '</div>';
-      // 消耗块
-      var calChips = SPORTS.map(function(sp){
-        var c = calBySport[sp]||0; if(!(c>0)) return "";
-        var color = (sp==="健身") ? "#7c3aed"
-                  : (CARDIO_COLORS[cardioKind({sport:sp})||"其他"]||SPORT_GREEN);
-        return '<span class="ov-chip"><i style="background:'+color+'"></i>'+esc(sp)+' '+c.toLocaleString()+'</span>';
-      }).filter(function(x){return x;}).join("");
-      var calBlock = '<div class="ov-block">'
-        + '<div class="ov-meta"><div class="ov-label">消耗</div>'
-        + '<div class="ov-main">'+Math.round(totalCal).toLocaleString()+'<span class="ov-unit">千卡</span></div></div>'
-        + (calChips ? '<div class="ov-chips">'+calChips+'</div>' : '<div class="ov-chips ov-empty">无消耗</div>')
-        + '</div>';
-      overview = '<div class="ov-period">'+esc(periodName)+'</div>'
-        + '<div class="ov-grid">'+cardioBlock+strengthBlock+calBlock+'</div>';
-    }
-    box.innerHTML = overview + '<div class="st-cal-wrap" style="margin-top:12px">'+calendarHTML()+'</div>';
+    box.innerHTML = '<div class="st-cal-wrap">'+calendarHTML()+'</div>';
   }
   // ---------- 右侧：运动趋势柱状图 ----------
+  // 规范口径：项目筛选只筛**有氧**项目类型，力量不参与（它没有距离，卡路里也已计在「全部」里）。
+  // 统一走 cardioKind 归一：骑车→骑行，非白名单类型→其他。
   function projMatch(r, proj){
     if(proj==="all") return true;
-    if(proj==="力量") return r.sport==="健身";
-    if(proj==="骑行") return r.sport==="骑行" || r.sport==="骑车";
-    if(proj==="爬山") return r.sport==="爬山" || (r.sport==="健走" && /爬山|登山|徒步|hike/i.test((r.note||"")+(r.raw||"")));
-    return r.sport===proj;   // 跑步 / 游泳
+    if(r.sport==="健身") return false;
+    return (cardioKind(r)||"其他")===proj;
   }
   function chartVal(r, unit){
     if(unit==="kcal") return calcCalories(r);
@@ -2588,7 +2560,7 @@
         if(d.getFullYear()!==scopeY) return false;
         if(isYear) return d.getMonth()===scopeM;
         return d.getMonth()===scopeM && d.getDate()===sel;
-      }).sort(function(a,b){ return (a.time||"").localeCompare(b.time||""); });
+      }).sort(function(a,b){ return dayOf(a.time).localeCompare(dayOf(b.time)) || (a.createdAt||0)-(b.createdAt||0); });
       var title = isYear ? (scopeY+' 年 '+sel+' 月') : (scopeY+'/'+(scopeM+1)+'/'+sel);
       if(!recs.length) return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div><div class="bd-empty">该区间暂无数据</div></div>';
       // 展示口径：有几条记录就显示几行，健身也不再按日期合并。
@@ -2620,7 +2592,7 @@
         var dstr = isYear && dp ? ((dp.getMonth()+1)+"/"+dp.getDate()+" ") : "";
         pieces.push({ t:(r.time||""), html:'<div class="bd-row">'+badgesHTML+'<span class="bd-body">'+esc(dstr)+esc(body)+'</span></div>' });
       });
-      pieces.sort(function(a,b){ return (a.t||"").localeCompare(b.t||""); });
+      pieces.sort(function(a,b){ return dayOf(a.t).localeCompare(dayOf(b.t)); });
       var rows = pieces.map(function(p){ return p.html; }).join("");
       return '<div class="bar-detail"><div class="bd-title">'+esc(title)+'</div>'+rows+'</div>';
     }
@@ -2772,9 +2744,14 @@
     closeModal();
   }
   function openModal(){ document.getElementById("importModal").classList.add("on"); }
+  function openSettings(){
+    renderStats();                                   // 打开时把体重 / AI 密钥状态刷成最新
+    document.getElementById("settingsModal").classList.add("on");
+  }
+  // 两个弹窗共用 [data-close-modal] 与 Esc，统一一起关
   function closeModal(){
-    document.getElementById("importModal").classList.remove("on");
-    document.getElementById("importText").value="";
+    document.querySelectorAll(".modal-back").forEach(function(m){ m.classList.remove("on"); });
+    var t=document.getElementById("importText"); if(t) t.value="";
     var f=document.getElementById("importFile"); if(f) f.value="";
   }
 
@@ -2790,12 +2767,16 @@
       try{ if(v) localStorage.setItem(SECRET_STORE_KEY, v); else localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
       location.reload();
     });
+    var setBtn=document.getElementById("btnSettings");
+    if(setBtn) setBtn.addEventListener("click", openSettings);
     document.getElementById("btnImport").addEventListener("click", openModal);
     document.getElementById("doImport").addEventListener("click", function(){
       runImport(document.getElementById("importText").value.trim());
     });
     document.querySelectorAll("[data-close-modal]").forEach(function(b){ b.addEventListener("click", closeModal); });
-    document.getElementById("importModal").addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+    document.querySelectorAll(".modal-back").forEach(function(m){
+      m.addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+    });
     var fileEl=document.getElementById("importFile");
     if(fileEl) fileEl.addEventListener("change", function(){
       var f=this.files[0]; if(!f) return;
@@ -2950,16 +2931,6 @@
     var addC=document.querySelector("[data-add-cardio]");
     if(addC) addC.addEventListener("click", cardioAdd);
 
-    // stats range pills
-    document.querySelectorAll('[data-pill="statsRange"] .pill').forEach(function(p){
-      p.addEventListener("click", function(){
-        statsRange = p.getAttribute("data-val");
-        document.querySelectorAll('[data-pill="statsRange"] .pill').forEach(function(q){
-          q.classList.toggle("on", q===p);
-        });
-        renderStats();
-      });
-    });
     // 力量筛选条（部位）
     var sFilter=document.querySelector('[data-filter="strength"]');
     if(sFilter){
