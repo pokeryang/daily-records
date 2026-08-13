@@ -502,6 +502,7 @@
             <span class="pill" data-val="爬山">爬山</span>
             <span class="pill" data-val="健走">健走</span>
             <span class="pill" data-val="跳绳">跳绳</span>
+            <span class="pill" data-val="爬楼机">爬楼机</span>
             <span class="pill" data-val="其他">其他</span>
           </div>
         </div>
@@ -572,6 +573,7 @@
           <span class="fchip" data-cff="爬山">爬山</span>
           <span class="fchip" data-cff="健走">健走</span>
           <span class="fchip" data-cff="跳绳">跳绳</span>
+          <span class="fchip" data-cff="爬楼机">爬楼机</span>
           <span class="fchip" data-cff="其他">其他</span>
         </div>
         <div class="filter-bar year-tabs" data-year-tabs="cardio"></div>
@@ -876,7 +878,7 @@
   var ORPHAN_BACKUP_KEY = "daily-records-orphans-v1";
   var MODULES = ["thought","sport","book","house"];
   // 「其他」是有氧的正式兜底类目：sport 缺失时归到这里，可见可选、可再手工改。
-  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","跳绳","其他"];
+  var SPORTS = ["游泳","跑步","骑行","爬山","健身","健走","跳绳","爬楼机","其他"];
   var CARDIO = ["游泳","跑步","骑行"];
   var WP = window.WorkoutParse;
 
@@ -934,6 +936,27 @@
     var v = map[s] || map.local;
     el.textContent = "● " + v[0];
     el.style.color = v[1];
+    setStaleBanner(s);
+  }
+  // 没连上云端时，页面上这份数据就是本机缓存 —— 别人在另一台设备增删改过，这里看不到。
+  // 原来只有右上角一个灰色小字「● 本地模式」，太容易忽略，看着像正常状态。
+  function setStaleBanner(s){
+    var bad = (s==="local" || s==="offline");
+    var bar = document.getElementById("staleBar");
+    if(!bad){ if(bar) bar.style.display="none"; return; }
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "staleBar";
+      bar.style.cssText = "background:#fff7ed;border-bottom:1px solid #fdba74;color:#9a3412;"
+        + "font-size:13px;font-weight:600;padding:8px 18px;text-align:center";
+      var tb = document.querySelector(".topbar");
+      if(tb && tb.parentNode) tb.parentNode.insertBefore(bar, tb.nextSibling);
+      else document.body.insertBefore(bar, document.body.firstChild);
+    }
+    bar.textContent = (s==="offline")
+      ? "⚠ 当前离线：改动已存在本机、等联网后自动上传；期间其他设备的改动看不到"
+      : "⚠ 未连云端：这里显示的是本机缓存，可能不是最新数据（点右上角「解锁/切换密钥」连上云端）";
+    bar.style.display = "block";
   }
 
   function initCloud(){
@@ -976,15 +999,56 @@
   // 正在飞的 upsert：请求已发出但还没回来。重新拉取云端时这批 id 必须保住，
   // 否则「刚加的一行」会在 SELECT 里查不到，被当成"别处已删"从本地抹掉。
   var _inflight = {};
-  function cloudUpsert(r){
+  // 每行"上次见到的云端版本号"（就是 updated_at）。写回时带上它做条件更新，
+  // 云端那行已经被别的设备改过 → 条件不成立 → 0 行受影响，就能发现冲突而不是闷头覆盖。
+  var _rev = {};
+  // 自己写出去的 updated_at 值。便宜轮询看到"云端最新时间戳"是自己写的，就不必整份重拉。
+  var _myRev = {};
+  function markMyRev(ts){
+    if(!ts) return;
+    _myRev[ts] = Date.now();
+    var ks = Object.keys(_myRev);
+    if(ks.length > 40){ ks.sort(function(a,b){ return _myRev[a]-_myRev[b]; }).slice(0, ks.length-40).forEach(function(k){ delete _myRev[k]; }); }
+  }
+  function noteRev(id, ts){ if(id && ts){ _rev[id] = ts; markMyRev(ts); } }
+  // 冲突落地：以云端为准盖回本地，并明确告诉用户"你刚才这一下没保存"，
+  // 绝不静默丢弃任何一边。旧口径是本地直接盖云端，另一台设备的改动无声消失。
+  function onWriteConflict(r){
+    SB.from("records").select("*").eq("id", r.id).then(function(res){
+      var row = res.data && res.data[0];
+      if(row){
+        var cloud = recFromRow(row);
+        var i = state.records.findIndex(function(x){ return x.id===r.id; });
+        if(i>=0) state.records[i] = cloud; else state.records.push(cloud);
+        _rev[r.id] = row.updated_at;
+        save(); realtimeRender();
+        toast("这条记录已在其他设备改过，已刷新为云端最新版本，你刚才的改动未保存", true);
+      }else{
+        state.records = state.records.filter(function(x){ return x.id!==r.id; });
+        delete _rev[r.id];
+        save(); realtimeRender();
+        toast("这条记录已在其他设备删除，本机也已移除", true);
+      }
+    });
+  }
+  function cloudUpsert(r, force){
     // 未连云端(未解锁/离线/CDN 没加载)时不能直接丢掉：写进待办队列，联网后由 flushOutbox 补传，
     // 否则这次改动只存在于本机，下次 cloudBootstrap 会用云端旧值把它覆盖回去。
     if(!CLOUD_ON){ queueOp({op:"upsert", id:r.id}); return; }
     _inflight[r.id] = true;
-    SB.from("records").upsert(rowFromRec(r)).then(function(res){
+    var row = rowFromRec(r);
+    var rev = _rev[r.id];
+    // 有已知版本号 → 条件更新；没有（本机刚新建 / 离线补传）→ 直接 upsert
+    var q = (rev && !force)
+      ? SB.from("records").update(row).eq("id", r.id).eq("updated_at", rev).select()
+      : SB.from("records").upsert(row).select();
+    q.then(function(res){
       delete _inflight[r.id];
-      if(res.error){ console.warn("upsert err", res.error); queueOp({op:"upsert", id:r.id}); setCloudStatus("offline"); }
-      else { setCloudStatus("synced"); }
+      if(res.error){ console.warn("upsert err", res.error); queueOp({op:"upsert", id:r.id}); setCloudStatus("offline"); return; }
+      if(rev && !force && (!res.data || !res.data.length)){ onWriteConflict(r); setCloudStatus("synced"); return; }
+      var got = res.data && res.data[0];
+      noteRev(r.id, got ? got.updated_at : row.updated_at);
+      setCloudStatus("synced");
     });
   }
   function cloudDelete(id, notify){
@@ -995,6 +1059,7 @@
       return;
     }
     SB.from("records").delete().eq("id", id).then(function(res){
+      delete _rev[id];
       if(res.error){ console.warn("delete err", res.error); queueOp({op:"delete", id:id}); setCloudStatus("offline"); }
       else { setCloudStatus("synced"); }
     });
@@ -1005,7 +1070,8 @@
     state.pendingOps = []; save();
     ops.forEach(function(o){
       if(o.op==="delete"){ cloudDelete(o.id); }
-      else if(o.op==="upsert"){ var r=state.records.find(function(x){return x.id===o.id;}); if(r) cloudUpsert(r); }
+      // force=true：离线期间的改动按既定契约"本机优先"，不走冲突检测（否则一上线就被判冲突丢掉）
+      else if(o.op==="upsert"){ var r=state.records.find(function(x){return x.id===o.id;}); if(r) cloudUpsert(r, true); }
     });
   }
   function cloudBootstrap(done){
@@ -1027,6 +1093,7 @@
       (res.data||[]).forEach(function(row){
         var r = recFromRow(row);
         if(pendingDel[r.id]) return;   // 本机已删、等着补传的，不要 merge 回来
+        _rev[r.id] = row.updated_at;   // 记下云端版本号，写回时做条件更新
         cloudById[r.id] = r;
       });
 
@@ -1050,8 +1117,7 @@
         console.warn("[sync] 本地多出 "+dropped.length+" 条云端已不存在的记录，按云端为准移除", dropped);
       }
 
-      // 只有真的变了才重画：定时兜底每分钟拉一次，无变化时不能把页面重渲一遍
-      // （会打断滚动位置、收起展开的行）。签名用 id|updated_at，比对整份数据便宜得多。
+      // 记下"云端指纹"基线：便宜轮询靠它判断有没有变化，不必再整份重拉。
       var sig = cloudSig(res.data);
       var changed = (sig !== _cloudSig) || dropped.length > 0;
       _cloudSig = sig;
@@ -1061,6 +1127,7 @@
       setCloudStatus("synced");
       flushOutbox();
       subscribeRealtime();
+      pollBaseline();
       if(done) done(true);
     });
   }
@@ -1074,21 +1141,45 @@
   // ---- 主动兜底拉取 ----
   // 实时订阅只有 DELETE 能穿过 RLS 送达（websocket 带不上 x-app-secret 头，INSERT/UPDATE 事件被服务端过滤掉），
   // 所以另一台设备的「新增/修改」，在这台一直开着的页面上原本要等手动刷新才看得见。
-  // 这里补三个触发点：切回标签页、窗口重新获得焦点、页面可见时每 60 秒一次。
+  // 关键约束：整份 select("*") 有 4.8MB（看房记录里塞着 base64 照片），绝不能拿它做定时轮询。
+  // 做法：每次只问两个极小的问题 —— 云端总条数 + 最新的 updated_at，合成一个"指纹"（约 200 字节）。
+  //   新增 → 条数和时间戳都变；修改 → 时间戳变；删除 → 条数变。三种情况都能发现。
+  // 指纹变了才去做一次完整拉取。自己刚写的那一下也会让时间戳前进，用 _myRev 认出来，避免自己触发重拉。
+  var _pollSig = "";
+  function readPollSig(){
+    var pc = SB.from("records").select("id", { count:"exact", head:true });
+    var pt = SB.from("records").select("updated_at").order("updated_at", { ascending:false }).limit(1);
+    return Promise.all([pc, pt]).then(function(rs){
+      if(rs[0].error || rs[1].error) return null;
+      var n = rs[0].count;
+      var mx = (rs[1].data && rs[1].data[0] && rs[1].data[0].updated_at) || "";
+      return { n:n, mx:mx, sig:n + "@" + mx };
+    });
+  }
+  function pollBaseline(){
+    return readPollSig().then(function(p){ if(p) _pollSig = p.sig; return p; });
+  }
   var _refreshAt = 0, _refreshing = false;
   function cloudRefresh(force){
     if(!CLOUD_ON || !SB) return;
     if(document.hidden) return;                      // 后台标签页不拉
     if(_refreshing) return;                          // 单飞：上一次还没回来
     if(isUserEditing()) return;                      // 正在输入时不碰 DOM
+    if(Object.keys(_inflight).length) return;        // 自己还有写在飞，等它落地再比对
     var now = Date.now();
     if(!force && now - _refreshAt < 5000) return;    // 5 秒防抖：focus 和 visibilitychange 常常连着来
     _refreshAt = now; _refreshing = true;
-    cloudBootstrap(function(){ _refreshing = false; });
+    readPollSig().then(function(p){
+      if(!p){ _refreshing = false; setCloudStatus("offline"); return; }
+      if(p.sig === _pollSig){ _refreshing = false; setCloudStatus("synced"); return; }
+      // 指纹变了：如果条数与本地一致、且最新时间戳正是自己刚写的，那就是自己的改动，认掉基线即可
+      if(p.n === state.records.length && _myRev[p.mx]){ _pollSig = p.sig; _refreshing = false; setCloudStatus("synced"); return; }
+      cloudBootstrap(function(){ _refreshing = false; });
+    });
   }
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) cloudRefresh(); });
   window.addEventListener("focus", function(){ cloudRefresh(); });
-  setInterval(function(){ cloudRefresh(); }, 60000);
+  setInterval(function(){ cloudRefresh(); }, 30000);
   var _realtimeRenderPending = false;
   function isUserEditing(){
     var ae = document.activeElement;
@@ -1120,9 +1211,10 @@
         .on("postgres_changes", {event:"*", schema:"public", table:"records"}, function(payload){
           if(payload.eventType==="DELETE"){
             var did = payload.old && payload.old.id;
-            if(did){ state.records = state.records.filter(function(x){return x.id!==did;}); save(); realtimeRender(); }
+            if(did){ delete _rev[did]; state.records = state.records.filter(function(x){return x.id!==did;}); save(); realtimeRender(); }
           }else{
             var r = recFromRow(payload.new);
+            if(payload.new && payload.new.updated_at) _rev[r.id] = payload.new.updated_at;
             var i = state.records.findIndex(function(x){return x.id===r.id;});
             if(i>=0) state.records[i]=r; else state.records.push(r);
             save(); realtimeRender();
@@ -1212,6 +1304,9 @@
     if(sp==="健身") return 5.0;                          // 力量训练中高强度
     if(sp==="健走") return 4.3;                          // 快走/健步走
     if(sp==="跳绳") return 12.3;                         // 跳绳（ACSM: general rope jumping）
+    // 爬楼机（踏步机/StairMaster）：2011 Compendium 代码 02065「stair-treadmill ergometer, general」= 9.3 MET。
+    // 这项没有距离，卡路里完全由时长决定：kcal = 9.3 × 3.5 × 体重kg ÷ 200 × 分钟。
+    if(sp==="爬楼机") return 9.3;
     return 4.0;                                          // 其他/一般活动
   }
   // total number of working sets across a strength session's exercises
@@ -1673,9 +1768,11 @@
   }
   // average pace/speed for cardio card (no "配速 " prefix)
   // 口径：游泳按 /100m，骑行和爬山按 km/h，其余（跑步/健走/跳绳/其他/自定义类型）一律按 min/km。
+  // 爬楼机没有距离概念（机器只给时长/层数），一律不出配速。
   // 只要「时长」和「距离」都填了就一定出数，不再有类型落不到分支上而永远空白的情况。
   function cardioPaceStr(r){
     if(!r) return "";
+    if(r.sport==="爬楼机") return "";              // 机器只给时长，没有距离 → 配速无意义
     var d = num(r.duration); if(!(d>0)) return "";
     var km = distanceKm(r); if(!(km>0)) return "";
     if(r.sport==="游泳"){
@@ -1697,13 +1794,13 @@
     return h>0 ? (h+" 小时 "+m+" 分") : (m+" 分");
   }
   // ---------- 力量训练 (strength) ----------
-  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/爬山/健走/跳绳/其他
+  var CARDIO_SPORTS = SPORTS.filter(function(s){ return s!=="健身"; });   // 游泳/跑步/骑行/爬山/健走/跳绳/爬楼机/其他
   var PARTS_ALL = ["胸","背","肩","腿"];
   var PART_COLORS = { "胸":"#e0453f", "背":"#2f6fe0", "肩":"#d98207", "腿":"#7c3aed" };
   var SPORT_GREEN = "#10b981";
-  // 有氧运动 7 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕 / 健走灰蓝 / 跳绳黄 / 其他中灰
-  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走","跳绳","其他"];
-  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8", "跳绳":"#eab308", "其他":"#a8a29e" };
+  // 有氧运动 8 类彩色: 游泳蓝 / 跑步绿 / 骑行橙 / 爬山棕 / 健走灰蓝 / 跳绳黄 / 爬楼机紫 / 其他中灰
+  var CARDIO_KINDS = ["游泳","跑步","骑行","爬山","健走","跳绳","爬楼机","其他"];
+  var CARDIO_COLORS = { "游泳":"#0ea5e9", "跑步":"#10b981", "骑行":"#f97316", "爬山":"#78716c", "健走":"#94a3b8", "跳绳":"#eab308", "爬楼机":"#8b5cf6", "其他":"#a8a29e" };
   // 游泳「1 圈」按 50m 折算成 km（Olympic 长池）；chartVal / cardioPaceStr 均用此常数保证一致
   var LAP_KM = 0.05;
   // 距离折算成公里：km/公里/千米=1，m/米=/1000，圈=×LAP_KM，其它=0
@@ -1722,6 +1819,7 @@
     if(sp==="骑车") return "骑行";                        // 历史别名
     if(CARDIO_SPORTS.indexOf(sp)>=0) return sp;           // 已是合法有氧类目 → 原样尊重
     var txt=(r.note||"")+"|"+(r.raw||"")+"|"+(r.project||"");
+    if(/爬楼机|踏步机|爬楼梯|stair/i.test(txt)) return "爬楼机";  // legacy 自由文本兜底（先判爬楼，别被下面的“爬山”抢走）
     if(/爬山|登山|徒步|hike/i.test(txt)) return "爬山";    // legacy 自由文本兜底
     return "其他";                                        // 兜底桶：不再默认塞「健走」
   }
@@ -2494,7 +2592,7 @@
   var calYM = null;            // {y,m} 日历查看的月份
   var calSelDay = null;        // 点开查看详情的日
   var chartUnit = "km";        // km | kcal
-  var chartProj = "all";       // all | 游泳 | 跑步 | 骑行 | 爬山 | 健走 | 跳绳 | 其他（只筛有氧）
+  var chartProj = "all";       // all | 游泳 | 跑步 | 骑行 | 爬山 | 健走 | 跳绳 | 爬楼机 | 其他（只筛有氧）
   var chartYear = null;        // 全年图查看的年份 (null=当前年)
   var chartMonth = null;       // 本月图查看的 {y,m} (null=当前月)
   var chartYearSel = null;     // 全年图选中的月 (1-12)
