@@ -975,8 +975,13 @@
     try{
       SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global:{ headers:{ "x-app-secret": APP_SECRET } } });
       CLOUD_ON = true;
+      renderAll();              // 先用本地缓存立即渲染，不让用户干等
       setCloudStatus("connecting");
-      SB.rpc("verify_expense_secret").then(function(vr){
+      // 验证密钥 + 拉取数据并行，省一个 RTT
+      var verifyP = SB.rpc("verify_expense_secret");
+      var dataP   = SB.from("records").select("*");
+      Promise.all([verifyP, dataP]).then(function(results){
+        var vr = results[0], dr = results[1];
         if(vr.error || vr.data!==true){
           try{ localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
           CLOUD_ON=false; setCloudStatus("local");
@@ -984,7 +989,8 @@
           renderAll();
           return;
         }
-        cloudBootstrap();
+        // 验证通过，直接用已拿到的数据做 bootstrap（不再重新 fetch）
+        cloudBootstrapWithData(dr);
       });
     }catch(e){ console.warn("cloud init failed", e); CLOUD_ON=false; setCloudStatus("local"); }
   }
@@ -1078,6 +1084,10 @@
   }
   function cloudBootstrap(done){
     SB.from("records").select("*").then(function(res){
+      cloudBootstrapWithData(res, done);
+    });
+  }
+  function cloudBootstrapWithData(res, done){
       if(res.error){ console.warn("fetch err", res.error); setCloudStatus("offline"); subscribeRealtime(); if(done) done(false); return; }
 
       // ===== 同步契约：云端权威 =====
@@ -1131,7 +1141,6 @@
       subscribeRealtime();
       pollBaseline();
       if(done) done(true);
-    });
   }
   var _cloudSig = "";
   function cloudSig(rows){
