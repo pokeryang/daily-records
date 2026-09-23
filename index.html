@@ -920,13 +920,97 @@
       }
     }catch(e){ console.warn("load failed", e); }
   }
+  // localStorage 只是启动缓存，不是数据源。看房照片是数 MB 的 base64，若随 400+ 条记录整包写入，
+  // iOS Safari 会触发 QuotaExceededError，连带让每次增删改都弹“保存失败”。完整图片只留在内存和 Supabase；
+  // 本地缓存保留除图片外的字段，页面解锁后由 cloudBootstrap 拉回完整记录。
+  function cacheSafeRecord(r){
+    if(!r || typeof r!=="object" || r.module!=="house") return r;
+    var c={};
+    Object.keys(r).forEach(function(k){ if(k!=="images" && k!=="_localImageCount") c[k]=r[k]; });
+    c.images=[];
+    var liveCount=Array.isArray(r.images) ? r.images.length : 0;
+    c._localImageCount=Math.max(liveCount, Math.max(0, num(r._localImageCount)||0));
+    return c;
+  }
+  function cacheSnapshot(){
+    return {
+      records:(state.records||[]).map(cacheSafeRecord),
+      pendingOps:state.pendingOps||[],
+      profile:state.profile||DEFAULT_PROFILE
+    };
+  }
+  function hasHouseImages(){
+    return (state.records||[]).some(function(r){ return r && r.module==="house" && Array.isArray(r.images) && r.images.length; });
+  }
   function save(){
-    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-    catch(e){ toast("保存失败："+e.message, true); }
+    // IndexedDB 不可用且云端尚未确认时，不覆盖仍含完整图片的旧缓存；宁可本次仅驻留内存，也不丢照片。
+    if(_imageCacheAvailable===false && !CLOUD_READY && hasHouseImages()) return false;
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify(cacheSnapshot()));
+      return true;
+    }catch(e){
+      console.warn("cache save failed", e);
+      // 即使该站点还有别的本地数据占满配额，也不能阻塞云端增删改；缓存失败仅影响离线启动速度。
+      return false;
+    }
+  }
+
+  // 图片单独放 IndexedDB：容量远大于 localStorage，并保住离线重载后的待同步图片。
+  // 数据库仅是本机缓存；Supabase 仍是联网状态下的唯一权威源。
+  var IMAGE_DB_NAME="daily-records-images-v1", IMAGE_STORE="record-images", _imageDb=null, _imageCacheAvailable=null;
+  function openImageDb(done){
+    if(_imageDb){ _imageCacheAvailable=true; done(_imageDb); return; }
+    if(!window.indexedDB){ _imageCacheAvailable=false; done(null); return; }
+    try{
+      var req=indexedDB.open(IMAGE_DB_NAME,1);
+      req.onupgradeneeded=function(){
+        var db=req.result;
+        if(!db.objectStoreNames.contains(IMAGE_STORE)) db.createObjectStore(IMAGE_STORE,{keyPath:"id"});
+      };
+      req.onsuccess=function(){ _imageDb=req.result; _imageCacheAvailable=true; done(_imageDb); };
+      req.onerror=function(){ _imageCacheAvailable=false; console.warn("image cache open failed", req.error); done(null); };
+    }catch(e){ _imageCacheAvailable=false; console.warn("image cache open failed", e); done(null); }
+  }
+  function loadCachedImages(done){
+    openImageDb(function(db){
+      if(!db){ done(); return; }
+      try{
+        var req=db.transaction(IMAGE_STORE,"readonly").objectStore(IMAGE_STORE).getAll();
+        req.onsuccess=function(){
+          var byId={};
+          (req.result||[]).forEach(function(x){ if(x && x.id) byId[x.id]=x.images||[]; });
+          state.records.forEach(function(r){
+            if(r.module!=="house") return;
+            var expected=Math.max(0,num(r._localImageCount)||0);
+            if((!Array.isArray(r.images) || r.images.length<expected) && byId[r.id]) r.images=byId[r.id];
+            if(expected===0 || (Array.isArray(r.images) && r.images.length>=expected)) delete r._localImageCount;
+          });
+          done();
+        };
+        req.onerror=function(){ console.warn("image cache load failed", req.error); done(); };
+      }catch(e){ console.warn("image cache load failed", e); done(); }
+    });
+  }
+  function saveCachedImages(done){
+    var finished=false;
+    function finish(ok){ if(!finished){ finished=true; if(done) done(ok); } }
+    openImageDb(function(db){
+      if(!db){ finish(false); return; }
+      try{
+        var tx=db.transaction(IMAGE_STORE,"readwrite"), store=tx.objectStore(IMAGE_STORE);
+        store.clear();
+        state.records.forEach(function(r){
+          if(r.module==="house" && Array.isArray(r.images) && r.images.length) store.put({id:r.id,images:r.images});
+        });
+        tx.oncomplete=function(){ _imageCacheAvailable=true; finish(true); };
+        tx.onerror=function(){ _imageCacheAvailable=false; console.warn("image cache save failed", tx.error); finish(false); };
+        tx.onabort=function(){ _imageCacheAvailable=false; finish(false); };
+      }catch(e){ _imageCacheAvailable=false; console.warn("image cache save failed", e); finish(false); }
+    });
   }
 
   // ---------- cloud (Supabase) ----------
-  var SB = null, CLOUD_ON = false;
+  var SB = null, CLOUD_ON = false, CLOUD_READY = false;
 
   function setCloudStatus(s){
     var el = document.getElementById("cloudStatus");
@@ -981,17 +1065,20 @@
       SB.rpc("verify_expense_secret").then(function(vr){
         if(vr.error || vr.data!==true){
           try{ localStorage.removeItem(SECRET_STORE_KEY); }catch(e){}
-          CLOUD_ON=false; setCloudStatus("local");
+          CLOUD_ON=false; CLOUD_READY=false; setCloudStatus("local");
           toast("数据密钥无效，已切到本地模式；刷新可重新输入", true);
           renderAll();
           return;
         }
         cloudBootstrap();
       });
-    }catch(e){ console.warn("cloud init failed", e); CLOUD_ON=false; setCloudStatus("local"); }
+    }catch(e){ console.warn("cloud init failed", e); CLOUD_ON=false; CLOUD_READY=false; setCloudStatus("local"); }
   }
 
-  function rowFromRec(r){ return { id:r.id, module:r.module, time:r.time||"", data:r, updated_at:new Date().toISOString() }; }
+  function rowFromRec(r){
+    var data={}; Object.keys(r||{}).forEach(function(k){ if(k!=="_localImageCount") data[k]=r[k]; });
+    return { id:r.id, module:r.module, time:r.time||"", data:data, updated_at:new Date().toISOString() };
+  }
   function recFromRow(row){ var r = row.data || {}; r.id=row.id; r.module=row.module; if(row.time) r.time=row.time; return normalizeSportRec(r); }
 
   function queueOp(op){
@@ -1036,9 +1123,9 @@
     });
   }
   function cloudUpsert(r, force){
-    // 未连云端(未解锁/离线/CDN 没加载)时不能直接丢掉：写进待办队列，联网后由 flushOutbox 补传，
-    // 否则这次改动只存在于本机，下次 cloudBootstrap 会用云端旧值把它覆盖回去。
-    if(!CLOUD_ON){ queueOp({op:"upsert", id:r.id}); return; }
+    // 未连云端，或首次云端快照尚未完成时，先写进待办队列；等 cloudBootstrap 合并完成再补传。
+    // 这同时阻止轻量缓存里暂未恢复的空 images 抢先覆盖云端照片。
+    if(!CLOUD_ON || !CLOUD_READY){ queueOp({op:"upsert", id:r.id}); return; }
     _inflight[r.id] = true;
     var row = rowFromRec(r);
     var rev = _rev[r.id];
@@ -1056,10 +1143,10 @@
     });
   }
   function cloudDelete(id, notify){
-    // 同上：离线删除必须留痕，否则云端那行原封不动，下次打开又被 merge 回本地 —— 记录"复活"。
-    if(!CLOUD_ON){
+    // 同上：离线或首次云端快照未完成时，删除必须留痕，否则云端那行会被重新合并回来。
+    if(!CLOUD_ON || !CLOUD_READY){
       queueOp({op:"delete", id:id});
-      if(notify) toast("未连云端：已在本机删除，联网解锁后自动同步");
+      if(notify) toast("已在本机删除，云端就绪后自动同步");
       return;
     }
     SB.from("records").delete().eq("id", id).then(function(res){
@@ -1069,7 +1156,7 @@
     });
   }
   function flushOutbox(){
-    if(!CLOUD_ON || !state.pendingOps || !state.pendingOps.length) return;
+    if(!CLOUD_ON || !CLOUD_READY || !state.pendingOps || !state.pendingOps.length) return;
     var ops = state.pendingOps.slice();
     state.pendingOps = []; save();
     ops.forEach(function(o){
@@ -1101,21 +1188,35 @@
         cloudById[r.id] = r;
       });
 
-      var next = [], dropped = [];
-      Object.keys(cloudById).forEach(function(id){ next.push(cloudById[id]); });
+      var next = [], dropped = [], localById = {};
+      state.records.forEach(function(r){ if(r && r.id) localById[r.id]=r; });
+      Object.keys(cloudById).forEach(function(id){
+        // 离线期间明确编辑过的本机版本优先；图片优先从 IndexedDB 恢复。
+        // 若 IndexedDB 不可用但轻量缓存注明原本有图，则从云端补图，绝不以缓存空数组覆盖云端照片。
+        if((pendingUp[id] || _inflight[id]) && localById[id]){
+          var local=localById[id], cloud=cloudById[id];
+          var expectedImages=Math.max(0,num(local._localImageCount)||0);
+          if(local.module==="house" && (local.images||[]).length<expectedImages){
+            local.images=Array.isArray(cloud.images) ? cloud.images : [];
+            delete local._localImageCount;
+          }
+          next.push(local);
+        }else next.push(cloudById[id]);
+      });
       state.records.forEach(function(r){
-        if(cloudById[r.id]) return;                       // 云端已有，用云端版本
+        if(cloudById[r.id]) return;
         if(pendingUp[r.id]){ next.push(r); return; }      // 离线新增/修改，待补传，保留
         if(_inflight[r.id]){ next.push(r); return; }      // upsert 还在飞，SELECT 可能比它先到，别当成"已删"
         dropped.push(r);                                  // 其余：已在别处删除
       });
 
       if(dropped.length){
-        // 不静默丢：留一份本机备份，万一是误判还能捞回来。只留最近 500 条，避免撑爆 localStorage。
+        // 不静默丢：留一份本机备份，万一是误判还能捞回来。备份同样不复制 base64 图片，
+        // 避免主缓存瘦身后又被 orphan 备份重新撑爆 localStorage。
         try{
           var bk = JSON.parse(localStorage.getItem(ORPHAN_BACKUP_KEY)||"[]");
           if(!Array.isArray(bk)) bk = [];
-          bk = bk.concat(dropped).slice(-500);
+          bk = bk.concat(dropped).slice(-500).map(cacheSafeRecord);
           localStorage.setItem(ORPHAN_BACKUP_KEY, JSON.stringify(bk));
         }catch(e){}
         console.warn("[sync] 本地多出 "+dropped.length+" 条云端已不存在的记录，按云端为准移除", dropped);
@@ -1127,6 +1228,8 @@
       _cloudSig = sig;
 
       state.records = next;
+      CLOUD_READY = true;
+      saveCachedImages();
       if(changed || !done){ save(); if(done) realtimeRender(); else renderAll(); }
       setCloudStatus("synced");
       flushOutbox();
@@ -1215,13 +1318,13 @@
         .on("postgres_changes", {event:"*", schema:"public", table:"records"}, function(payload){
           if(payload.eventType==="DELETE"){
             var did = payload.old && payload.old.id;
-            if(did){ delete _rev[did]; state.records = state.records.filter(function(x){return x.id!==did;}); save(); realtimeRender(); }
+            if(did){ delete _rev[did]; state.records = state.records.filter(function(x){return x.id!==did;}); save(); saveCachedImages(); realtimeRender(); }
           }else{
             var r = recFromRow(payload.new);
             if(payload.new && payload.new.updated_at) _rev[r.id] = payload.new.updated_at;
             var i = state.records.findIndex(function(x){return x.id===r.id;});
             if(i>=0) state.records[i]=r; else state.records.push(r);
-            save(); realtimeRender();
+            save(); saveCachedImages(); realtimeRender();
           }
         }).subscribe();
     }catch(e){ _rtSub = false; console.warn("realtime failed", e); }
@@ -1733,7 +1836,7 @@
       addedRecs.push(r);
       added++;
     });
-    if(added){ save(); addedRecs.forEach(function(r){ cloudUpsert(r); }); }
+    if(added){ save(); saveCachedImages(); addedRecs.forEach(function(r){ cloudUpsert(r); }); }
     return {added:added, skippedDup:dup, invalid:invalid};
   }
 
@@ -2452,7 +2555,7 @@
             : "确认删除这条记录？";
     if(!confirm(msg)) return;
     state.records=state.records.filter(function(x){ return x.id!==id; });
-    save(); cloudDelete(id, true); renderAfterChange(m);
+    save(); if(m==="house") saveCachedImages(); cloudDelete(id, true); renderAfterChange(m);
   }
   // 已移除：migrateHouse()。它在启动时过滤掉 v!==2 的老看房记录，属一次性迁移；
   // 云端 31 条看房记录已全部是 v=2，留着只会成为下一个"启动即改数据"的隐患。
@@ -2547,7 +2650,7 @@
           if(dataUrl) r.images.push({src:dataUrl, note:""});
           if(--pending===0){
             r.updatedAt=Date.now();
-            save(); cloudUpsert(r); sheetRender("house"); toast("已插入图片");
+            save(); saveCachedImages(); cloudUpsert(r); sheetRender("house"); toast("已插入图片");
           }
         });
       });
@@ -2562,7 +2665,7 @@
     if(!confirm("确认删除"+nm+"图片？")) return;
     r.images.splice(idx,1);
     r.updatedAt=Date.now();
-    save(); cloudUpsert(r); sheetRender("house");
+    save(); saveCachedImages(); cloudUpsert(r); sheetRender("house");
   }
   function houseUpdateImageNote(id, idx, note){
     var r=findHouse(id); if(!r || !Array.isArray(r.images)) return;
@@ -2574,7 +2677,7 @@
     if((item.note||"") === next) return;
     item.note = next;
     r.updatedAt=Date.now();
-    save(); cloudUpsert(r);
+    save(); saveCachedImages(); cloudUpsert(r);
   }
   function openLightbox(src, note){
     if(!src) return;
@@ -3261,13 +3364,19 @@
   }
 
   // ---------- init ----------
-  // 启动路径只做四件事：读本地缓存 → 绑事件 → 渲染 → 拉云端。
-  // 这里不再有任何"顺手把数据修一修"的逻辑：不补录、不去重、不删空记录、
-  // 不改写运动类型、不合并同日健身、不自动算卡路里。你不动它，它一个字节都不改。
+  // 启动路径：读轻量缓存 → 从 IndexedDB 补回图片 → 绑事件并渲染 → 拉云端。
+  // 先补图片再开放编辑，避免云端尚未拉完时把缓存里的空 images 误写回去。
+  // 这里不做补录、去重、删空记录、改写运动类型、合并同日健身或自动算卡路里。
   load();
-  bind();
-  renderAll();
-  initCloud();          // 连接 Supabase 并以云端为准刷新本地（未配置则保持本地模式）
+  loadCachedImages(function(){
+    // 首次升级先确认图片已进入 IndexedDB，再把旧版含 base64 的大 localStorage 瘦身。
+    saveCachedImages(function(){
+      save();
+      bind();
+      renderAll();
+      initCloud();       // 连接 Supabase 并以云端为准刷新本地（未配置则保持本地模式）
+    });
+  });
 })();
 </script>
 </body>
